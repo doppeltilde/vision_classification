@@ -1,5 +1,5 @@
 services:
-  cpu:
+  vision_classification:
     build:
       context: .
       dockerfile: ./Dockerfile

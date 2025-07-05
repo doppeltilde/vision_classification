@@ -7,6 +7,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 from typing import List, Dict, Any, Optional
 import logging
+import time
+
+from src.shared.resize_image import resize_image
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -55,8 +58,8 @@ def classify_frame(img_bytes: bytes, frame_idx: int, stop_event: threading.Event
         with Image.open(io.BytesIO(img_bytes)) as img:
             img.seek(frame_idx)
             frame = img.convert("RGB")
-
-            predictions = model(frame)
+            img_resized = resize_image(frame, size=(224, 224))
+            predictions = model(img_resized)
 
             return {
                 "frame": frame_idx,
@@ -126,13 +129,21 @@ async def classify(
 async def process_single_image(img: Image.Image, model: pipeline) -> Dict[str, Any]:
     """Process a single image"""
     try:
+        start_time = time.time()
+
         img_rgb = img.convert("RGB")
-        predictions = model(img_rgb)
+        img_resized = resize_image(img_rgb, size=(224, 224))
+        predictions = model(img_resized)
+        
+        end_time = time.time()
+        processing_time = end_time - start_time
 
         return {
             "type": "single_image",
             "predictions": predictions,
-            "detected": predictions[0]["score"] if predictions else 0.0
+            "detected": predictions[0]["score"] if predictions else 0.0,
+            "isNSFW": predictions[0]["score"] >= 0.7,
+            "processing_time": processing_time,
         }
     except Exception as e:
         logger.error(f"Error processing single image: {e}")
@@ -155,6 +166,8 @@ async def process_animated_gif(
     results = []
     stop_event = threading.Event()
     processed_frames = 0
+    start_time = time.time()
+
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Submit all tasks
@@ -192,6 +205,8 @@ async def process_animated_gif(
         if "predictions" in result and result["predictions"]:
             max_score = max(max_score, result["predictions"][0]["score"])
 
+    end_time = time.time()
+    processing_time = end_time - start_time
     return {
         "type": "animated_gif",
         "total_frames": frame_count,
@@ -200,7 +215,8 @@ async def process_animated_gif(
         "max_score": max_score,
         "early_stopped": stop_event.is_set(),
         "detected": max_score > score_threshold,
-        "frame_results": results
+        "frame_results": results,
+        "processing_time": processing_time,
     }
 
 @app.post("/api/classify/batch")
