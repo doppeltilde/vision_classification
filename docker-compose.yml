@@ -1,0 +1,12 @@
+services:
+  vision_classification:
+    image: ghcr.io/doppeltilde/vision_classification:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - models:/root/.cache/huggingface/hub:rw
+    environment:
+      - DEFAULT_SCORE
+      - USE_API_KEYS
+      - API_KEYS
+    restart: unless-stopped
