@@ -175,12 +175,14 @@ async def process_animated_gif(
             processed_frames += 1
 
             # Check if should stop early
-            if ("predictions" in result and
-                result["predictions"] and
-                result["predictions"][0]["score"] > score_threshold):
+            if "predictions" in result and result["predictions"]:
+                for pred in result["predictions"]:
+                    if pred["label"].lower() == "high" and pred["score"] > score_threshold:
+                        logger.info(f"Early stop triggered at frame {result['frame']} with label 'high' score {pred['score']}")
+                        stop_event.set()
+                        break
 
-                logger.info(f"Early stop triggered at frame {result['frame']} with score {result['predictions'][0]['score']}")
-                stop_event.set()
+            if stop_event.is_set():
                 break
 
     max_score = 0.0
