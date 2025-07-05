@@ -13,7 +13,7 @@
 
 ```yml
 services:
-  image_video_classification:
+  vision_classification:
     image: ghcr.io/doppeltilde/vision_classification:latest
     ports:
       - "8000:8000"
