@@ -8,7 +8,7 @@ import threading
 from typing import List, Dict, Any, Optional
 import logging
 import time
-
+from src.routes.api import image_classify
 from src.shared.resize_image import resize_image
 
 # Set up logging
@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+app.include_router(image_classify.router)
 
 classifier: Optional[pipeline] = None
 
