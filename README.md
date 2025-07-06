@@ -1,4 +1,4 @@
-# Vision Classifiction
+# Vision Classification
 
 ## Stack:
 - [FastAPI](https://fastapi.tiangolo.com)
@@ -19,7 +19,8 @@ services:
     volumes:
       - ./models:/root/.cache/huggingface/hub:rw
     environment:
-      - DEFAULT_SCORE
+      - DEFAULT_MODEL_NAME
+      - ACCESS_TOKEN
       - USE_API_KEYS
       - API_KEYS
     restart: unless-stopped
@@ -31,7 +32,8 @@ services:
 ## Environment Variables
 - Create a `.env` file and set the preferred values.
 ```sh
-DEFAULT_SCORE=0.7
+DEFAULT_MODEL_NAME=
+ACCESS_TOKEN=
 
 # False == Public Access
 # True == Access Only with API Key
