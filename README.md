@@ -4,7 +4,6 @@
 - [FastAPI](https://fastapi.tiangolo.com)
 - [Python](https://www.python.org)
 - [Docker](https://docker.com)
-- [Model: Freepik NSFW Image Detector](https://huggingface.co/Freepik/nsfw_image_detector)
 
 
 ## Installation

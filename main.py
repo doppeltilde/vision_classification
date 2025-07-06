@@ -1,5 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from transformers import pipeline
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from PIL import Image, UnidentifiedImageError
 import io
 import filetype
@@ -8,15 +7,16 @@ import threading
 from typing import List, Dict, Any, Optional
 import logging
 import time
-from src.routes.api import image_classify
-from src.shared.resize_image import resize_image
+from optimum.pipelines import pipeline
+
+from src.middleware.auth import get_api_key
+from src.shared.shared import access_token, default_model_name
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-app.include_router(image_classify.router)
 
 classifier: Optional[pipeline] = None
 
@@ -27,8 +27,10 @@ async def load_model():
     try:
         classifier = pipeline(
             "image-classification",
-            model="Freepik/nsfw_image_detector",
-            device=-1  # CPU -1, GPU 0
+            model=default_model_name,
+            device=-1,
+            accelerator="ort",
+            token=access_token,
         )
         logger.info("Model loaded successfully")
     except Exception as e:
@@ -59,8 +61,7 @@ def classify_frame(img_bytes: bytes, frame_idx: int, stop_event: threading.Event
         with Image.open(io.BytesIO(img_bytes)) as img:
             img.seek(frame_idx)
             frame = img.convert("RGB")
-            img_resized = resize_image(frame, size=(224, 224))
-            predictions = model(img_resized)
+            predictions = model(frame)
 
             return {
                 "frame": frame_idx,
@@ -71,7 +72,7 @@ def classify_frame(img_bytes: bytes, frame_idx: int, stop_event: threading.Event
         logger.error(f"Error processing frame {frame_idx}: {e}")
         return {"frame": frame_idx, "error": str(e)}
 
-@app.post("/api/classify")
+@app.post("/api/classify", dependencies=[Depends(get_api_key)])
 async def classify(
     file: UploadFile = File(...),
     every_n_frame: int = 3,
@@ -131,8 +132,7 @@ async def process_single_image(img: Image.Image, model: pipeline) -> Dict[str, A
         start_time = time.time()
 
         img_rgb = img.convert("RGB")
-        img_resized = resize_image(img_rgb, size=(224, 224))
-        predictions = model(img_resized)
+        predictions = model(img_rgb)
         
         end_time = time.time()
         processing_time = end_time - start_time
@@ -218,7 +218,7 @@ async def process_animated_gif(
         "processing_time": processing_time,
     }
 
-@app.post("/api/classify/batch")
+@app.post("/api/classify/batch", dependencies=[Depends(get_api_key)])
 async def classify_batch(files: List[UploadFile] = File(...)) -> Dict[str, Any]:
     """Classify multiple images at once"""
     if len(files) > 10:
