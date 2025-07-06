@@ -4,6 +4,7 @@ from PIL import Image
 import io
 import time
 from src.shared.resize_image import resize_image
+import torch
 
 router = APIRouter()
 
@@ -13,7 +14,8 @@ async def image_classify(
 ):
     """Classify test image"""
     try:
-        detector = NSFWDetector()
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        detector = NSFWDetector(dtype=torch.bfloat16, device=device)
         start_time = time.time()
         
         contents = await file.read()

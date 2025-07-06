@@ -76,7 +76,7 @@ async def classify(
     file: UploadFile = File(...),
     every_n_frame: int = 3,
     score_threshold: float = 0.7,
-    max_workers: int = 4
+    max_workers: int = None
 ) -> Dict[str, Any]:
     """
     Classify images or animated GIFs for NSFW content
@@ -98,8 +98,6 @@ async def classify(
         raise HTTPException(status_code=400, detail="every_n_frame must be >= 1")
     if not (0.0 <= score_threshold <= 1.0):
         raise HTTPException(status_code=400, detail="score_threshold must be between 0.0 and 1.0")
-    if max_workers < 1 or max_workers > 10:
-        raise HTTPException(status_code=400, detail="max_workers must be between 1 and 10")
 
     try:
         contents = await file.read()
