@@ -156,11 +156,19 @@ async def process_single_image(
         end_time = time.time()
         processing_time = end_time - start_time
 
+        nsfw_score = 0.0
+        for pred in predictions:
+            if pred.get("label") == "nsfw":
+                nsfw_score = pred.get("score", 0.0)
+                break
+
+        detected_score = predictions[0]["score"] if predictions else 0.0
+
         return {
             "type": "single_image",
             "predictions": predictions,
-            "detected": predictions[0]["score"] if predictions else 0.0,
-            "isNSFW": predictions[0]["score"] >= score_threshold,
+            "detected": detected_score,
+            "isNSFW": nsfw_score >= score_threshold,
             "processing_time": processing_time,
         }
     except Exception as e:
