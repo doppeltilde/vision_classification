@@ -1,5 +1,4 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
-from src.middleware.auth import get_api_key
 from PIL import Image, UnidentifiedImageError
 import io
 import filetype
@@ -9,6 +8,9 @@ from typing import List, Dict, Any, Optional
 import logging
 import time
 from optimum.pipelines import pipeline
+
+from src.middleware.auth import get_api_key
+from src.shared.shared import access_token, default_model_name
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -25,9 +27,10 @@ async def load_model():
     try:
         classifier = pipeline(
             "image-classification",
-            model="onnx-community/nsfw_image_detection-ONNX",
+            model=default_model_name,
             device=-1,
             accelerator="ort",
+            token=access_token,
         )
         logger.info("Model loaded successfully")
     except Exception as e:
