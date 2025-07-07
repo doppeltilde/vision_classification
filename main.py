@@ -85,6 +85,7 @@ async def classify(
     every_n_frame: int = 3,
     score_threshold: float = 0.7,
     max_workers: int = None,
+    label: str = "nsfw",
 ) -> Dict[str, Any]:
     """
     Classify images or animated GIFs for NSFW content
@@ -130,10 +131,16 @@ async def classify(
         # Process based on image type
         if img.format == "GIF" and getattr(img, "is_animated", False):
             return await process_animated_gif(
-                contents, img, every_n_frame, score_threshold, max_workers, classifier
+                contents,
+                img,
+                every_n_frame,
+                score_threshold,
+                max_workers,
+                classifier,
+                label,
             )
         else:
-            return await process_single_image(img, classifier, score_threshold)
+            return await process_single_image(img, classifier)
 
     except HTTPException:
         raise
@@ -145,7 +152,6 @@ async def classify(
 async def process_single_image(
     img: Image.Image,
     model: pipeline,
-    score_threshold: float,
 ) -> Dict[str, Any]:
     """Process a single image"""
     try:
@@ -156,19 +162,9 @@ async def process_single_image(
         end_time = time.time()
         processing_time = end_time - start_time
 
-        nsfw_score = 0.0
-        for pred in predictions:
-            if pred.get("label") == "nsfw":
-                nsfw_score = pred.get("score", 0.0)
-                break
-
-        detected_score = predictions[0]["score"] if predictions else 0.0
-
         return {
             "type": "single_image",
             "predictions": predictions,
-            "detected": detected_score,
-            "isNSFW": nsfw_score >= score_threshold,
             "processing_time": processing_time,
         }
     except Exception as e:
@@ -183,6 +179,7 @@ async def process_animated_gif(
     score_threshold: float,
     max_workers: int,
     model: pipeline,
+    label: str = "nsfw",
 ) -> Dict[str, Any]:
     """Process an animated GIF"""
     frame_count = img.n_frames
@@ -219,11 +216,11 @@ async def process_animated_gif(
             if "predictions" in result and result["predictions"]:
                 for pred in result["predictions"]:
                     if (
-                        pred["label"].lower() == "nsfw"
+                        pred["label"].lower() == label
                         and pred["score"] > score_threshold
                     ):
                         logger.info(
-                            f"Early stop triggered at frame {result['frame']} with label 'nsfw' score {pred['score']}"
+                            f"Early stop triggered at frame {result['frame']} with label {pred['label']} score {pred['score']}"
                         )
                         stop_event.set()
                         break
@@ -231,23 +228,17 @@ async def process_animated_gif(
             if stop_event.is_set():
                 break
 
-    max_score = 0.0
     total_frames_processed = len([r for r in results if "predictions" in r])
-
-    for result in results:
-        if "predictions" in result and result["predictions"]:
-            max_score = max(max_score, result["predictions"][0]["score"])
 
     end_time = time.time()
     processing_time = end_time - start_time
+
     return {
         "type": "animated_gif",
         "total_frames": frame_count,
         "processed_frames": total_frames_processed,
         "sampled_every_n": every_n_frame,
-        "max_score": max_score,
         "early_stopped": stop_event.is_set(),
-        "isNSFW": max_score >= score_threshold,
         "frame_results": results,
         "processing_time": processing_time,
     }
