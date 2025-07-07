@@ -26,6 +26,8 @@ async def load_model():
     """Load the classification model at startup"""
     global classifier
     try:
+        logger.info("DEFAULT MODEL: " + default_model_name)
+
         classifier = pipeline(
             "image-classification",
             model=default_model_name,
@@ -35,7 +37,7 @@ async def load_model():
         )
         logger.info("Model loaded successfully")
     except Exception as e:
-        logger.error(f"Failed to load model: {e}")
+        logger.error(f"Failed to load model: {e}", exc_info=True)
         raise
 
 
@@ -65,8 +67,7 @@ def classify_frame(
     try:
         with Image.open(io.BytesIO(img_bytes)) as img:
             img.seek(frame_idx)
-            frame = img.convert("RGB")
-            predictions = model(frame)
+            predictions = model(img)
 
             return {
                 "frame": frame_idx,
@@ -74,7 +75,7 @@ def classify_frame(
                 "timestamp": frame_idx,
             }
     except Exception as e:
-        logger.error(f"Error processing frame {frame_idx}: {e}")
+        logger.error(f"Error processing frame {frame_idx}: {e}", exc_info=True)
         return {"frame": frame_idx, "error": str(e)}
 
 
@@ -137,7 +138,7 @@ async def classify(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Unexpected error in classify: {e}")
+        logger.error(f"Unexpected error in classify: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -150,8 +151,7 @@ async def process_single_image(
     try:
         start_time = time.time()
 
-        img_rgb = img.convert("RGB")
-        predictions = model(img_rgb)
+        predictions = model(img)
 
         end_time = time.time()
         processing_time = end_time - start_time
@@ -172,7 +172,7 @@ async def process_single_image(
             "processing_time": processing_time,
         }
     except Exception as e:
-        logger.error(f"Error processing single image: {e}")
+        logger.error(f"Error processing single image: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Error processing image")
 
 

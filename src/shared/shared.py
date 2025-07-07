@@ -4,7 +4,9 @@ import os
 load_dotenv()
 
 access_token = os.getenv("ACCESS_TOKEN", None)
-default_model_name = os.getenv("DEFAULT_MODEL_NAME", "onnx-community/nsfw_image_detection-ONNX")
+default_model_name = os.getenv(
+    "DEFAULT_MODEL_NAME", "onnx-community/nsfw_image_detection-ONNX"
+)
 
 # API KEY
 api_keys_str = os.getenv("API_KEYS", "")
