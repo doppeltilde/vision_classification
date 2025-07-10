@@ -11,12 +11,14 @@ from optimum.pipelines import pipeline
 
 from src.middleware.auth import get_api_key
 from src.shared.shared import access_token, default_model_name
+from src.api import video_classification
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+app.include_router(video_classification.router)
 
 classifier: Optional[pipeline] = None
 
