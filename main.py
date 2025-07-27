@@ -53,18 +53,6 @@ def root():
 def classify_frame(
     img_bytes: bytes, frame_idx: int, stop_event: threading.Event, model: pipeline
 ) -> Dict[str, Any]:
-    """
-    Classify a single frame from an animated GIF
-
-    Args:
-        img_bytes: Raw image bytes
-        frame_idx: Frame index to process
-        stop_event: Threading event to signal early termination
-        model: The loaded classification model
-
-    Returns:
-        Dictionary with frame index and predictions or error
-    """
     if stop_event.is_set():
         return {"frame": frame_idx, "skipped": True}
 
@@ -90,7 +78,7 @@ async def classify(
     score_threshold: float = 0.7,
     max_workers: int = None,
     label: str = None,
-    detect_faces: bool = True,
+    detect_faces: bool = False,
     save_cropped: bool = False,
 ) -> Dict[str, Any]:
     """
@@ -101,7 +89,7 @@ async def classify(
         every_n_frame: Process every Nth frame for GIFs (default: 3)
         score_threshold: Threshold for early stopping on positive detection
         max_workers: Maximum number of worker threads for GIF processing
-        detect_faces: Whether to perform face detection before classification (default: True)
+        detect_faces: Whether to perform face detection before classification (default: False)
         save_cropped: Whether to save cropped faces (default: False)
 
     Returns:
