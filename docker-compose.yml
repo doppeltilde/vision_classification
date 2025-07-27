@@ -4,8 +4,10 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - models:/root/.cache/huggingface/hub:rw
+      - ./cropped_faces:/app/cropped_faces:rw
+      - ./models:/root/.cache/huggingface/hub:rw
     environment:
+      - DEFAULT_MODEL_NAME
       - DEFAULT_SCORE
       - USE_API_KEYS
       - API_KEYS

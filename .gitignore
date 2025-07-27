@@ -2,3 +2,4 @@ dev
 models
 __pycache__
 .env
+cropped_faces

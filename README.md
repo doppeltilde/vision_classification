@@ -2,6 +2,7 @@
 
 ## Stack:
 - [FastAPI](https://fastapi.tiangolo.com)
+- [MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/guide)
 - [Python](https://www.python.org)
 - [Docker](https://docker.com)
 
@@ -17,6 +18,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      - ./cropped_faces:/app/cropped_faces:rw
       - ./models:/root/.cache/huggingface/hub:rw
     environment:
       - DEFAULT_MODEL_NAME

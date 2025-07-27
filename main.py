@@ -1,23 +1,27 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from PIL import Image, UnidentifiedImageError
-import io
-import filetype
+import io, os, uuid, filetype, threading, logging, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
 from typing import List, Dict, Any, Optional
-import logging
-import time
 from optimum.pipelines import pipeline
 
 from src.middleware.auth import get_api_key
 from src.shared.shared import access_token, default_model_name
 
+import numpy as np
+import mediapipe as mp
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+OUTPUT_DIR = "./cropped_faces"
+
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
 app = FastAPI()
 
+mp_face_detection = mp.solutions.face_detection
 classifier: Optional[pipeline] = None
 
 
@@ -85,7 +89,9 @@ async def classify(
     every_n_frame: int = 3,
     score_threshold: float = 0.7,
     max_workers: int = None,
-    label: str = "nsfw",
+    label: str = None,
+    detect_faces: bool = True,
+    save_cropped: bool = False,
 ) -> Dict[str, Any]:
     """
     Classify images or animated GIFs for NSFW content
@@ -95,6 +101,8 @@ async def classify(
         every_n_frame: Process every Nth frame for GIFs (default: 3)
         score_threshold: Threshold for early stopping on positive detection
         max_workers: Maximum number of worker threads for GIF processing
+        detect_faces: Whether to perform face detection before classification (default: True)
+        save_cropped: Whether to save cropped faces (default: False)
 
     Returns:
         Classification results
@@ -140,7 +148,12 @@ async def classify(
                 label,
             )
         else:
-            return await process_single_image(img, classifier)
+            return await process_single_image(
+                img,
+                classifier,
+                detect_faces,
+                save_cropped=save_cropped,
+            )
 
     except HTTPException:
         raise
@@ -152,21 +165,61 @@ async def classify(
 async def process_single_image(
     img: Image.Image,
     model: pipeline,
+    detect_faces: bool = False,
+    save_cropped: bool = False,
 ) -> Dict[str, Any]:
-    """Process a single image"""
     try:
         start_time = time.time()
 
-        predictions = model(img)
+        if detect_faces:
+            faces_detected, face_count, face_locations = detect_faces_in_image(img)
 
-        end_time = time.time()
-        processing_time = end_time - start_time
+            if not faces_detected:
+                end_time = time.time()
+                processing_time = end_time - start_time
 
-        return {
-            "type": "single_image",
-            "predictions": predictions,
-            "processing_time": processing_time,
-        }
+                return {
+                    "type": "single_image",
+                    "faces_detected": False,
+                    "face_count": 0,
+                    "predictions": None,
+                    "face_locations": [],
+                    "processing_time": processing_time,
+                }
+            predictions_cropped = []
+            for face_location in face_locations:
+                cropped_face = crop_face_from_image(
+                    img,
+                    face_location,
+                    save_cropped=save_cropped,
+                )
+                prediction_cropped = model(cropped_face)
+                predictions_cropped.append(prediction_cropped)
+
+            end_time = time.time()
+            processing_time = end_time - start_time
+
+            return {
+                "type": "multi_face",
+                "faces_detected": True,
+                "face_count": face_count,
+                "face_locations": face_locations,
+                "predictions": predictions_cropped,
+                "processing_time": processing_time,
+            }
+        else:
+            predictions = model(img)
+
+            end_time = time.time()
+            processing_time = end_time - start_time
+
+            return {
+                "type": "single_image",
+                "faces_detected": False,
+                "face_count": 0,
+                "predictions": predictions,
+                "processing_time": processing_time,
+            }
     except Exception as e:
         logger.error(f"Error processing single image: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Error processing image")
@@ -263,3 +316,95 @@ async def classify_batch(files: List[UploadFile] = File(...)) -> Dict[str, Any]:
             )
 
     return {"batch_results": results}
+
+
+def detect_faces_in_image(
+    img: Image.Image,
+) -> tuple[bool, int, list]:
+    try:
+        img_array = np.array(img)
+        img_height, img_width = img_array.shape[:2]
+
+        with mp_face_detection.FaceDetection(
+            model_selection=0,
+        ) as face_detection:
+
+            results = face_detection.process(img_array)
+
+            logger.info(results.detections)
+
+            if results.detections:
+                face_locations = []
+                for detection in results.detections:
+                    confidence_score = detection.score[0]
+                    if confidence_score >= 0.55:
+                        bbox = detection.location_data.relative_bounding_box
+                        logger.info(confidence_score)
+
+                        x_min = int(bbox.xmin * img_width)
+                        y_min = int(bbox.ymin * img_height)
+                        width = int(bbox.width * img_width)
+                        height = int(bbox.height * img_height)
+                        x_max = x_min + width
+                        y_max = y_min + height
+
+                        face_location = {
+                            "normalized": {
+                                "xmin": bbox.xmin,
+                                "ymin": bbox.ymin,
+                                "width": bbox.width,
+                                "height": bbox.height,
+                                "xmax": bbox.xmin + bbox.width,
+                                "ymax": bbox.ymin + bbox.height,
+                            },
+                            "pixel": {
+                                "xmin": x_min,
+                                "ymin": y_min,
+                                "width": width,
+                                "height": height,
+                                "xmax": x_max,
+                                "ymax": y_max,
+                            },
+                            "confidence": confidence_score,
+                        }
+
+                        face_locations.append(face_location)
+
+                face_count = len(results.detections)
+                return True, face_count, face_locations
+            else:
+                return False, 0, []
+
+    except Exception as e:
+        logger.error(f"Error in face detection: {e}", exc_info=True)
+        return False, 0, []
+
+
+def crop_face_from_image(
+    img: Image.Image,
+    face_location: dict,
+    padding: float = 0.1,
+    save_cropped: bool = False,
+) -> Image.Image:
+    img_width, img_height = img.size
+
+    pixel_coords = face_location["pixel"]
+
+    width_padding = int(pixel_coords["width"] * padding)
+    height_padding = int(pixel_coords["height"] * padding)
+
+    left = max(0, pixel_coords["xmin"] - width_padding)
+    top = max(0, pixel_coords["ymin"] - height_padding)
+    right = min(img_width, pixel_coords["xmax"] + width_padding)
+    bottom = min(img_height, pixel_coords["ymax"] + height_padding)
+
+    face_img = img.crop((left, top, right, bottom))
+
+    if save_cropped:
+        filename = f"face_{uuid.uuid4().hex[:8]}.jpg"
+        file_path = os.path.join(OUTPUT_DIR, filename)
+
+        face_img.save(file_path, "JPEG", quality=95)
+        logger.info(f"Saved cropped face to: OUTPUT_DIR")
+
+    return face_img
