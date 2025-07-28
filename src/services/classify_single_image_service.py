@@ -42,7 +42,8 @@ async def process_single_image(
                     face_location,
                     save_cropped=save_cropped,
                 )
-                predictions_cropped = model(cropped_face)
+                prediction_cropped = model(cropped_face)
+                predictions_cropped.extend(prediction_cropped)
 
             end_time = time.time()
             processing_time = end_time - start_time
