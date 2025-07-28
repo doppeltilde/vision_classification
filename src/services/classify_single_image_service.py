@@ -72,3 +72,6 @@ async def process_single_image(
     except Exception as e:
         logger.error(f"Error processing single image: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Error processing image")
+    finally:
+        img.close()
+        del img

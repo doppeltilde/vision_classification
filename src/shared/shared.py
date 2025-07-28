@@ -61,7 +61,6 @@ def load_model():
 
 
 def get_classifier():
-    """Get the loaded classifier instance"""
     if classifier is None:
         raise RuntimeError("Model not loaded. Call load_model() first during startup.")
     return classifier
