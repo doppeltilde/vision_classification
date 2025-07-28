@@ -23,6 +23,7 @@ services:
     environment:
       - DEFAULT_MODEL_NAME
       - ACCESS_TOKEN
+      - DEFAULT_TFLITE_MODEL_URL
       - USE_API_KEYS
       - API_KEYS
     restart: unless-stopped
@@ -36,6 +37,7 @@ services:
 ```sh
 DEFAULT_MODEL_NAME=
 ACCESS_TOKEN=
+DEFAULT_TFLITE_MODEL_URL=
 
 # False == Public Access
 # True == Access Only with API Key

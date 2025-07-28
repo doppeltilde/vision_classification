@@ -6,9 +6,11 @@ services:
     volumes:
       - ./cropped_faces:/app/cropped_faces:rw
       - ./models:/root/.cache/huggingface/hub:rw
+      - ./tflite_models:/app/tflite_models:rw
     environment:
       - DEFAULT_MODEL_NAME
-      - DEFAULT_SCORE
+      - ACCESS_TOKEN
+      - DEFAULT_TFLITE_MODEL_URL
       - USE_API_KEYS
       - API_KEYS
     restart: unless-stopped
