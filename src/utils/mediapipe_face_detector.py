@@ -1,7 +1,5 @@
 import numpy as np
 import mediapipe as mp
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
 import logging
 
 logger = logging.getLogger(__name__)
@@ -11,12 +9,20 @@ from PIL import Image
 from src.shared.shared import get_model_by_name
 
 face_detection_model_path = get_model_by_name("Face Detection")
-base_options = python.BaseOptions(model_asset_path=face_detection_model_path)
-options = vision.FaceDetectorOptions(base_options=base_options)
-detector = vision.FaceDetector.create_from_options(options)
+
+BaseOptions = mp.tasks.BaseOptions
+FaceDetector = mp.tasks.vision.FaceDetector
+FaceDetectorOptions = mp.tasks.vision.FaceDetectorOptions
+VisionRunningMode = mp.tasks.vision.RunningMode
+
+options = FaceDetectorOptions(
+    base_options=BaseOptions(model_asset_path=face_detection_model_path),
+    running_mode=VisionRunningMode.IMAGE,
+)
+detector = FaceDetector.create_from_options(options)
 
 
-def detect_faces_in_image(
+def mediapipe_face_detection(
     img: Image.Image,
 ) -> tuple[bool, int, list]:
     try:

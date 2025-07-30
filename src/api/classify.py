@@ -24,6 +24,7 @@ async def classify(
     label: str = None,
     detect_faces: bool = False,
     save_cropped: bool = False,
+    save_landmark: bool = False,
     return_face_locations: bool = False,
 ) -> Dict[str, Any]:
     """
@@ -36,6 +37,7 @@ async def classify(
         max_workers: Maximum number of worker threads for GIF processing
         detect_faces: Whether to perform face detection before classification (default: False)
         save_cropped: Whether to save cropped faces (default: False)
+        save_landmark: Whether to save face landmarks (default: False)
         return_face_locations: Whether to return face locations (default: False)
 
     Returns:
@@ -91,6 +93,7 @@ async def classify(
                 classifier,
                 detect_faces,
                 save_cropped=save_cropped,
+                save_landmark=save_landmark,
                 return_face_locations=return_face_locations,
             )
 

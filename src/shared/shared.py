@@ -70,18 +70,17 @@ for model_name, config in models.items():
     model_path = os.path.join(MODEL_DIR, config["filename"])
 
     if os.path.exists(model_path):
-        print(f"{model_name} model already exists at: {model_path}. Skipping download.")
+        logger.info(
+            f"{model_name} model already exists at: {model_path}. Skipping download."
+        )
         continue
 
     try:
         urllib.request.urlretrieve(model_url, model_path)
-        print(f"{model_name} model downloaded successfully to: {model_path}")
+        logger.info(f"{model_name} model downloaded successfully to: {model_path}")
     except Exception as e:
-        print(f"Error downloading {model_name} model: {e}")
-        print(f"URL tried: {model_url}")
-        print(
-            "Please check the environment variable, URL, and your internet connection.\n"
-        )
+        logger.error(f"Error downloading {model_name} model: {e}")
+        logger.error(f"URL tried: {model_url}")
 
 # END MEDIAPIPE
 

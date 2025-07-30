@@ -6,7 +6,7 @@ import logging, time
 from optimum.pipelines import pipeline
 
 from src.shared.crop_face_from_image import crop_face_from_image
-from src.shared.detect_faces_in_image import detect_faces_in_image
+from src.utils.mediapipe_face_detector import mediapipe_face_detection
 
 logger = logging.getLogger(__name__)
 
@@ -16,13 +16,14 @@ async def process_single_image(
     model: pipeline,
     detect_faces: bool = False,
     save_cropped: bool = False,
+    save_landmark: bool = False,
     return_face_locations: bool = False,
 ) -> Dict[str, Any]:
     try:
         start_time = time.time()
 
         if detect_faces:
-            faces_detected, face_count, face_locations = detect_faces_in_image(img)
+            faces_detected, face_count, face_locations = mediapipe_face_detection(img)
 
             if not faces_detected:
                 end_time = time.time()
@@ -47,6 +48,7 @@ async def process_single_image(
                     img,
                     face_location,
                     save_cropped=save_cropped,
+                    save_landmark=save_landmark,
                 )
                 prediction_cropped = model(cropped_face)
                 predictions_cropped.extend(prediction_cropped)

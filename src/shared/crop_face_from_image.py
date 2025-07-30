@@ -7,6 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from src.shared.shared import OUTPUT_DIR
+from src.utils.mediapipe_face_landmark import mediapipe_face_landmark_detection
 
 
 def crop_face_from_image(
@@ -14,7 +15,10 @@ def crop_face_from_image(
     face_location: dict,
     padding: float = 0.1,
     save_cropped: bool = False,
+    save_landmark: bool = False,
 ) -> Image.Image:
+    fileId = uuid.uuid4().hex
+
     img_width, img_height = img.size
 
     pixel_coords = face_location["pixel"]
@@ -59,19 +63,23 @@ def crop_face_from_image(
         drawFull.rectangle([(x1, y1), (x2, y2)], outline="red", width=5)
         drawFull.text((text_x, text_y), score_text, font=font, fill="red")
 
-        fileId = uuid.uuid4().hex
-
-        filename = f"face_{fileId}.jpg"
+        filename = f"{fileId}_face.jpg"
         file_path = os.path.join(OUTPUT_DIR, filename)
         annotated_img.save(file_path, "JPEG", quality=95)
         logger.info(f"Saved full image with score to: {file_path}")
 
+        if save_landmark:
+            mediapipe_face_landmark_detection(annotated_img, f"{fileId}_full")
+
         draw = ImageDraw.Draw(face_img)
         draw.text((text_x, text_y), score_text, font=font, fill="red")
 
-        croppedfilename = f"cropped_face_{fileId}.jpg"
+        croppedfilename = f"{fileId}_cropped.jpg"
         cropped_file_path = os.path.join(OUTPUT_DIR, croppedfilename)
         face_img.save(cropped_file_path, "JPEG", quality=95)
         logger.info(f"Saved cropped face with score to: {cropped_file_path}")
+
+        if save_landmark:
+            mediapipe_face_landmark_detection(face_img, f"{fileId}_cropped")
 
     return face_img
