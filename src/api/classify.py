@@ -24,6 +24,7 @@ async def classify(
     label: str = None,
     detect_faces: bool = False,
     save_cropped: bool = False,
+    return_face_locations: bool = False,
 ) -> Dict[str, Any]:
     """
     Classify images or animated GIFs for NSFW content
@@ -35,6 +36,7 @@ async def classify(
         max_workers: Maximum number of worker threads for GIF processing
         detect_faces: Whether to perform face detection before classification (default: False)
         save_cropped: Whether to save cropped faces (default: False)
+        return_face_locations: Whether to return face locations (default: False)
 
     Returns:
         Classification results
@@ -89,6 +91,7 @@ async def classify(
                 classifier,
                 detect_faces,
                 save_cropped=save_cropped,
+                return_face_locations=return_face_locations,
             )
 
     except HTTPException:

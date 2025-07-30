@@ -6,3 +6,4 @@ optimum[onnxruntime]==1.26.1
 python-dotenv==1.1.1
 mediapipe
 numpy
+fastapi-swagger-dark==0.0.7

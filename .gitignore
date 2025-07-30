@@ -4,4 +4,4 @@ __pycache__
 .env
 cropped_faces
 .venv
-tflite_models
+mediapipe_models

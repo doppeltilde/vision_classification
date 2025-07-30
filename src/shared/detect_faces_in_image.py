@@ -8,9 +8,10 @@ logger = logging.getLogger(__name__)
 
 from PIL import Image
 
-from src.shared.shared import tflite_model_path
+from src.shared.shared import get_model_by_name
 
-base_options = python.BaseOptions(model_asset_path=tflite_model_path)
+face_detection_model_path = get_model_by_name("Face Detection")
+base_options = python.BaseOptions(model_asset_path=face_detection_model_path)
 options = vision.FaceDetectorOptions(base_options=base_options)
 detector = vision.FaceDetector.create_from_options(options)
 

@@ -8,11 +8,11 @@ services:
     volumes:
       - ./cropped_faces:/app/cropped_faces:rw
       - ./models:/root/.cache/huggingface/hub:rw
-      - ./tflite_models:/app/tflite_models:rw
+      - ./mediapipe_models:/app/mediapipe_models:rw
     environment:
       - DEFAULT_MODEL_NAME
       - ACCESS_TOKEN
-      - DEFAULT_TFLITE_MODEL_URL
+      - DEFAULT_FACE_DETECTION_MODEL_URL
       - USE_API_KEYS
       - API_KEYS
     restart: unless-stopped

@@ -16,6 +16,7 @@ async def process_single_image(
     model: pipeline,
     detect_faces: bool = False,
     save_cropped: bool = False,
+    return_face_locations: bool = False,
 ) -> Dict[str, Any]:
     try:
         start_time = time.time()
@@ -27,14 +28,19 @@ async def process_single_image(
                 end_time = time.time()
                 processing_time = end_time - start_time
 
-                return {
+                result = {
                     "type": "single_image",
                     "faces_detected": False,
                     "face_count": 0,
                     "predictions": None,
-                    "face_locations": [],
                     "processing_time": processing_time,
                 }
+
+                if return_face_locations:
+                    result["face_locations"] = []
+
+                return result
+
             predictions_cropped = []
             for face_location in face_locations:
                 cropped_face = crop_face_from_image(
@@ -48,14 +54,18 @@ async def process_single_image(
             end_time = time.time()
             processing_time = end_time - start_time
 
-            return {
+            result = {
                 "type": "multi_face",
                 "faces_detected": True,
                 "face_count": face_count,
-                "face_locations": face_locations,
                 "predictions": predictions_cropped,
                 "processing_time": processing_time,
             }
+
+            if return_face_locations:
+                result["face_locations"] = face_locations
+
+            return result
         else:
             predictions = model(img)
 

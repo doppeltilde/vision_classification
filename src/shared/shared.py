@@ -15,15 +15,9 @@ default_model_name = os.getenv(
     "DEFAULT_MODEL_NAME", "onnx-community/nsfw_image_detection-ONNX"
 )
 
-# https://storage.googleapis.com/mediapipe-assets/MediaPipe%20BlazeFace%20Model%20Card%20(Short%20Range).pdf
-default_tflite_model_url = os.getenv(
-    "DEFAULT_TFLITE_MODEL_URL",
-    "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite",
-)
-
 
 OUTPUT_DIR = "./cropped_faces"
-MODEL_DIR = "./tflite_models"
+MODEL_DIR = "./mediapipe_models"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
@@ -34,15 +28,62 @@ api_keys = api_keys_str.split(",") if api_keys_str else []
 use_api_keys = os.getenv("USE_API_KEYS", "False").lower() in ["true", "1", "yes"]
 
 
-tflite_model_url = default_tflite_model_url
-tflite_model_path = os.path.join(MODEL_DIR, "blaze_face_short_range.tflite")
+# START MEDIAPIPE
+# https://storage.googleapis.com/mediapipe-assets/MediaPipe%20BlazeFace%20Model%20Card%20(Short%20Range).pdf
+# https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MediaPipe%20Face%20Mesh%20V2.pdf
+# https://storage.googleapis.com/mediapipe-assets/Model%20Card%20Blendshape%20V2.pdf
 
-try:
-    urllib.request.urlretrieve(tflite_model_url, tflite_model_path)
-    print(f"Model downloaded successfully to: {tflite_model_path}")
-except Exception as e:
-    print(f"Error downloading model: {e}")
-    print("Please check the URL and your internet connection.")
+mediapipe_model_storage_url = "https://storage.googleapis.com/mediapipe-models"
+
+models = {
+    "Face Detection": {
+        "env_var": "DEFAULT_FACE_DETECTION_MODEL_URL",
+        "default_path": "face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite",
+        "filename": "blaze_face_short_range.tflite",
+    },
+    "Face Landmark": {
+        "env_var": "DEFAULT_FACE_LANDMARK_MODEL_URL",
+        "default_path": "face_landmarker/face_landmarker/float16/latest/face_landmarker.task",
+        "filename": "face_landmarker.task",
+    },
+    "Gesture Recognition": {
+        "env_var": "DEFAULT_GESTURE_RECOGNITION_MODEL_URL",
+        "default_path": "gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task",
+        "filename": "gesture_recognizer.task",
+    },
+    "Object Detection": {
+        "env_var": "DEFAULT_OBJECT_DETECTION_MODEL_URL",
+        "default_path": "object_detector/efficientdet_lite0/float16/latest/efficientdet_lite0.tflite",
+        "filename": "efficientdet_lite0.tflite",
+    },
+}
+
+
+def get_model_by_name(model_name: str) -> str:
+    return os.path.join(MODEL_DIR, models[model_name]["filename"])
+
+
+for model_name, config in models.items():
+    model_url = os.getenv(
+        config["env_var"], f"{mediapipe_model_storage_url}/{config['default_path']}"
+    )
+    model_path = os.path.join(MODEL_DIR, config["filename"])
+
+    if os.path.exists(model_path):
+        print(f"{model_name} model already exists at: {model_path}. Skipping download.")
+        continue
+
+    try:
+        urllib.request.urlretrieve(model_url, model_path)
+        print(f"{model_name} model downloaded successfully to: {model_path}")
+    except Exception as e:
+        print(f"Error downloading {model_name} model: {e}")
+        print(f"URL tried: {model_url}")
+        print(
+            "Please check the environment variable, URL, and your internet connection.\n"
+        )
+
+# END MEDIAPIPE
 
 
 def load_model():
