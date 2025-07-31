@@ -109,7 +109,6 @@ def load_model():
             device=-1,
             accelerator="ort",
             token=access_token,
-            local_files_only=cache_exists,
         )
         logger.info("Model loaded and cached")
     return classifier
