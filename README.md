@@ -20,6 +20,7 @@ services:
     volumes:
       - ./cropped_faces:/app/cropped_faces:rw
       - ./models:/root/.cache/huggingface/hub:rw
+      - ./mediapipe_models:/app/mediapipe_models:rw
     environment:
       - DEFAULT_MODEL_NAME
       - ACCESS_TOKEN
@@ -30,6 +31,9 @@ services:
       - LOG_LEVEL
     restart: unless-stopped
 ```
+
+> [!CAUTION]
+> When using [Docker Swarm](https://github.com/doppeltilde/vision_classification/blob/main/docker-compose.swarm.yml), ensure that all necessary volumes are created and accessible before deployment.
 
 > [!TIP]
 > You can find code examples in the [`examples`](./examples/) folder.

@@ -90,12 +90,26 @@ def load_model():
     global classifier
     if classifier is None:
         logger.info("DEFAULT MODEL: " + default_model_name)
+
+        cache_root = os.environ.get(
+            "HF_HOME", os.path.expanduser("~/.cache/huggingface")
+        )
+        model_cache_name = default_model_name.replace("/", "--")
+        cache_path = f"{cache_root}/hub/models--{model_cache_name}"
+        cache_exists = os.path.exists(cache_path)
+
+        if cache_exists:
+            logger.info("Model found in cache, loading from local files")
+        else:
+            logger.info("Model not found in cache, will download")
+
         classifier = pipeline(
             "image-classification",
             model=default_model_name,
             device=-1,
             accelerator="ort",
             token=access_token,
+            local_files_only=cache_exists,
         )
         logger.info("Model loaded and cached")
     return classifier

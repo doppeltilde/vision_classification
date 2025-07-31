@@ -1,0 +1,28 @@
+services:
+  vision_classification:
+    image: ghcr.io/doppeltilde/vision_classification:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./cropped_faces:/app/cropped_faces:rw
+      - ./models:/root/.cache/huggingface/hub:rw
+      - ./mediapipe_models:/app/mediapipe_models:rw
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+    environment:
+      - DEFAULT_MODEL_NAME
+      - ACCESS_TOKEN
+      - DEFAULT_FACE_DETECTION_MODEL_URL
+      - USE_API_KEY
+      - API_KEY_HASH
+      - API_KEY_SALT
+      - LOG_LEVEL
+    restart: unless-stopped
+    networks:
+      - vision-network
+
+networks:
+  vision-network:
+    driver: overlay
