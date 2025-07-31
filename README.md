@@ -24,8 +24,10 @@ services:
       - DEFAULT_MODEL_NAME
       - ACCESS_TOKEN
       - DEFAULT_FACE_DETECTION_MODEL_URL
-      - USE_API_KEYS
-      - API_KEYS
+      - USE_API_KEY
+      - API_KEY_HASH
+      - API_KEY_SALT
+      - LOG_LEVEL
     restart: unless-stopped
 ```
 
@@ -41,13 +43,18 @@ DEFAULT_FACE_DETECTION_MODEL_URL=
 
 # False == Public Access
 # True == Access Only with API Key
-USE_API_KEYS=False
+USE_API_KEY="False"
+API_KEY_HASH="<YOUR_GENERATED_KEY_HASH_HERE>"
+API_KEY_SALT="<YOUR_GENERATED_SALT_HERE>"
 
-# Comma seperated api keys
-API_KEYS=abc,123,xyz
+LOG_LEVEL=INFO
 ```
 
 ## Usage
+
+> [!IMPORTANT]
+> Set the log level to DEBUG, this will generate an api key, hash, and salt for you.
+> Just don't forget to set it back to INFO.
 
 > [!NOTE]
 > Please be aware that the initial classification process may require some time, as the model is being downloaded.

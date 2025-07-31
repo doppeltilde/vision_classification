@@ -23,10 +23,11 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 # API KEY
-api_keys_str = os.getenv("API_KEYS", "")
-api_keys = api_keys_str.split(",") if api_keys_str else []
-use_api_keys = os.getenv("USE_API_KEYS", "False").lower() in ["true", "1", "yes"]
+stored_api_key_salt = os.getenv("API_KEY_SALT", "")
+stored_api_key_hash = os.getenv("API_KEY_HASH", "")
+use_api_key = os.getenv("USE_API_KEY", "False").lower() in ["true", "1", "yes"]
 
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 
 # START MEDIAPIPE
 # https://storage.googleapis.com/mediapipe-assets/MediaPipe%20BlazeFace%20Model%20Card%20(Short%20Range).pdf
