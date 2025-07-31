@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-import os, urllib.request
+import os, urllib.request, shutil
 from optimum.pipelines import pipeline
 import logging
 
@@ -99,7 +99,8 @@ def load_model():
         cache_exists = os.path.exists(cache_path)
 
         if cache_exists:
-            logger.info("Model found in cache, loading from local files")
+            logger.info("Model found in cache, deleting and redownloading")
+            shutil.rmtree(cache_path)
         else:
             logger.info("Model not found in cache, will download")
 
