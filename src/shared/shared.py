@@ -91,19 +91,6 @@ def load_model():
     if classifier is None:
         logger.info("DEFAULT MODEL: " + default_model_name)
 
-        cache_root = os.environ.get(
-            "HF_HOME", os.path.expanduser("~/.cache/huggingface")
-        )
-        model_cache_name = default_model_name.replace("/", "--")
-        cache_path = f"{cache_root}/hub/models--{model_cache_name}"
-        cache_exists = os.path.exists(cache_path)
-
-        if cache_exists:
-            logger.info("Model found in cache, deleting and redownloading")
-            shutil.rmtree(cache_path)
-        else:
-            logger.info("Model not found in cache, will download")
-
         classifier = pipeline(
             "image-classification",
             model=default_model_name,
