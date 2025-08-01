@@ -21,14 +21,8 @@ services:
       - ./cropped_faces:/app/cropped_faces:rw
       - ./models:/root/.cache/huggingface/hub:rw
       - ./mediapipe_models:/app/mediapipe_models:rw
-    environment:
-      - DEFAULT_MODEL_NAME
-      - ACCESS_TOKEN
-      - DEFAULT_FACE_DETECTION_MODEL_URL
-      - USE_API_KEY
-      - API_KEY_HASH
-      - API_KEY_SALT
-      - LOG_LEVEL
+    env_file:
+      - .env
     restart: unless-stopped
 ```
 
@@ -39,7 +33,7 @@ services:
 > You can find code examples in the [`examples`](./examples/) folder.
 
 ## Environment Variables
-- Create a `.env` file and set the preferred values.
+- Create a [`.env`](https://github.com/doppeltilde/vision_classification/blob/main/.env.example) file and set the preferred values.
 ```sh
 DEFAULT_MODEL_NAME=
 ACCESS_TOKEN=
