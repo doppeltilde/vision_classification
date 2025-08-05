@@ -1,25 +1,25 @@
 from PIL import Image
 from fastapi import HTTPException
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import logging, time
-
-from optimum.pipelines import pipeline
 
 from src.shared.crop_face_from_image import crop_face_from_image
 from src.utils.mediapipe_face_detector import mediapipe_face_detection
+from src.shared.shared import load_model
 
 logger = logging.getLogger(__name__)
 
 
 async def process_single_image(
     img: Image.Image,
-    model: pipeline,
     detect_faces: bool = False,
     save_cropped: bool = False,
     save_landmark: bool = False,
     return_face_locations: bool = False,
+    model_to_load: Optional[str] = None,
 ) -> Dict[str, Any]:
     try:
+        model = load_model(model_to_load)
         start_time = time.time()
 
         if detect_faces:
@@ -51,7 +51,8 @@ async def process_single_image(
                     save_landmark=save_landmark,
                 )
                 prediction_cropped = model(cropped_face)
-                predictions_cropped.extend(prediction_cropped)
+                if prediction_cropped is not None:
+                    predictions_cropped.extend(prediction_cropped)
 
             end_time = time.time()
             processing_time = end_time - start_time

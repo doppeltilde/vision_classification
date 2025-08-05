@@ -1,13 +1,13 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from PIL import Image, UnidentifiedImageError
 import io, filetype
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import logging
 
 from src.middleware.auth import get_api_key
 from src.services.classify_single_image_service import process_single_image
 from src.services.classify_gif_service import process_animated_gif
-from src.shared.shared import get_classifier
+from src.shared.shared import load_model
 
 
 logger = logging.getLogger(__name__)
@@ -18,10 +18,11 @@ router = APIRouter()
 @router.post("/api/classify", dependencies=[Depends(get_api_key)])
 async def classify(
     file: UploadFile = File(...),
+    model_to_load: Optional[str] = None,
     every_n_frame: int = 3,
     score_threshold: float = 0.7,
-    max_workers: int = None,
-    label: str = None,
+    max_workers: Optional[int] = None,
+    label: Optional[str] = None,
     detect_faces: bool = False,
     save_cropped: bool = False,
     save_landmark: bool = False,
@@ -43,7 +44,7 @@ async def classify(
     Returns:
         Classification results
     """
-    if get_classifier is None:
+    if load_model is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
 
     # Validate parameters
@@ -55,8 +56,6 @@ async def classify(
         )
 
     try:
-        classifier = get_classifier()
-
         contents = await file.read()
 
         # Validate file type
@@ -84,17 +83,17 @@ async def classify(
                 every_n_frame,
                 score_threshold,
                 max_workers,
-                classifier,
                 label,
+                model_to_load=model_to_load,
             )
         else:
             return await process_single_image(
                 img,
-                classifier,
                 detect_faces,
                 save_cropped=save_cropped,
                 save_landmark=save_landmark,
                 return_face_locations=return_face_locations,
+                model_to_load=model_to_load,
             )
 
     except HTTPException:

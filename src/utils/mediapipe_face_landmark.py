@@ -1,6 +1,7 @@
 import numpy as np
 import mediapipe as mp
 import logging, os
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ landmarker = FaceLandmarker.create_from_options(options)
 
 def mediapipe_face_landmark_detection(
     img: Image.Image,
-    fileId: str = None,
+    fileId: Optional[str] = None,
 ) -> tuple[bool, int, list]:
     try:
         annotated_img = img.copy()

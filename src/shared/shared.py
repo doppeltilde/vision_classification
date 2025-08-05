@@ -1,14 +1,12 @@
 from dotenv import load_dotenv
-import os, urllib.request, shutil
+import os, urllib.request
 from optimum.pipelines import pipeline
 import logging
+from typing import Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-
-global classifier
-classifier = None
 
 access_token = os.getenv("ACCESS_TOKEN", None)
 default_model_name = os.getenv(
@@ -85,24 +83,28 @@ for model_name, config in models.items():
 
 # END MEDIAPIPE
 
+_model_cache: Dict[str, Any] = {}
 
-def load_model():
-    global classifier
-    if classifier is None:
-        logger.info("DEFAULT MODEL: " + default_model_name)
+
+def load_model(model_name: Optional[str] = None):
+    try:
+        model_to_load = model_name or default_model_name
+        logger.debug("DEFAULT MODEL: " + model_to_load)
+
+        if model_to_load in _model_cache:
+            logger.debug(f"Model {model_to_load} already loaded, using cached version")
+            return _model_cache[model_to_load]
 
         classifier = pipeline(
             "image-classification",
-            model=default_model_name,
+            model=model_to_load,
             device=-1,
             accelerator="ort",
             token=access_token,
         )
+        _model_cache[model_to_load] = classifier
         logger.info("Model loaded and cached")
-    return classifier
-
-
-def get_classifier():
-    if classifier is None:
-        raise RuntimeError("Model not loaded. Call load_model() first during startup.")
-    return classifier
+        return classifier
+    except Exception as e:
+        logger.error(f"Error loading model: {e}", exc_info=True)
+        raise

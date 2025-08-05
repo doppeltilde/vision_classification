@@ -1,10 +1,8 @@
 from PIL import Image
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import logging, threading, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from fastapi import HTTPException
-
-from optimum.pipelines import pipeline
 
 from src.services.classify_frame_service import classify_frame
 
@@ -16,12 +14,12 @@ async def process_animated_gif(
     img: Image.Image,
     every_n_frame: int,
     score_threshold: float,
-    max_workers: int,
-    model: pipeline,
-    label: str = "nsfw",
+    max_workers: Optional[int] = None,
+    label: Optional[str] = None,
+    model_to_load: Optional[str] = None,
 ) -> Dict[str, Any]:
     try:
-        frame_count = img.n_frames
+        frame_count = getattr(img, "n_frames", 1)
         frame_indices = list(range(0, frame_count, every_n_frame))
 
         logger.info(
@@ -36,7 +34,13 @@ async def process_animated_gif(
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
 
             future_to_frame = {
-                executor.submit(classify_frame, contents, idx, stop_event, model): idx
+                executor.submit(
+                    classify_frame,
+                    contents,
+                    idx,
+                    stop_event,
+                    model_to_load,
+                ): idx
                 for idx in frame_indices
             }
 
@@ -64,6 +68,7 @@ async def process_animated_gif(
                 if stop_event.is_set():
                     break
 
+        results.sort(key=lambda x: x.get("frame", 0))
         total_frames_processed = len([r for r in results if "predictions" in r])
 
         end_time = time.time()
