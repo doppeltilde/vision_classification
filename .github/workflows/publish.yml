@@ -6,18 +6,18 @@ on:
       - "v*"
 
 env:
-  REGISTRY: "ghcr.io"
-  REGISTRY_USER: ${{ github.actor }}
-  REGISTRY_SECRET: ${{ secrets.GITHUB_TOKEN }}
   IMAGE_NAME: ${{ github.repository }}
 
-permissions:
-  contents: read
-  packages: write
-
 jobs:
-  build_and_publish:
+  build-ghcr:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY: "ghcr.io"
+      REGISTRY_USER: ${{ github.actor }}
+      REGISTRY_SECRET: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       matrix:
         include:
@@ -42,7 +42,8 @@ jobs:
           labels: |
             type=raw,value=image-type=${{ matrix.label }}
 
-      - uses: docker/login-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ env.REGISTRY_USER }}
@@ -57,5 +58,54 @@ jobs:
           tags: |
             ${{ steps.meta.outputs.tags }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          # labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
+
+  build-dockerhub:
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: docker.io
+      REGISTRY_USER: doppeltilde
+      REGISTRY_SECRET: DOCKERHUB_TOKEN
+    
+    strategy:
+      matrix:
+        include:
+          - docker_file: Dockerfile
+            label: "latest"
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Meta
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=ref,event=tag
+          type=sha,prefix=sha-
+        labels: |
+          type=raw,value=image-type=${{ matrix.label }}
+    
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ env.REGISTRY_USER }}
+        password: ${{ secrets[env.REGISTRY_SECRET] }}
+    
+    - name: Build and push
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ${{ matrix.docker_file }}
+        tags: |
+          ${{ steps.meta.outputs.tags }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        platforms: linux/amd64,linux/arm64
