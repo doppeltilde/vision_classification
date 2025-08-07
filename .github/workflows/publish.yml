@@ -1,4 +1,4 @@
-name: ghcr.io CI/CD
+name: Build & Publish
 
 on:
   push:
@@ -108,4 +108,5 @@ jobs:
         tags: |
           ${{ steps.meta.outputs.tags }}
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        push: true
         platforms: linux/amd64,linux/arm64
