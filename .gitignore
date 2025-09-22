@@ -5,3 +5,4 @@ __pycache__
 cropped_faces
 .venv
 mediapipe_models
+dump.txt

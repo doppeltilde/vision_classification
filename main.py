@@ -1,6 +1,5 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, APIRouter, Depends
-import fastapi_swagger_dark as fsd
 import logging
 
 from src.middleware.auth import get_api_key
@@ -32,9 +31,8 @@ async def lifespan(app: FastAPI):
     logger.info("Application shutting down...")
 
 
-app = FastAPI(lifespan=lifespan, docs_url=None)
+app = FastAPI(lifespan=lifespan)
 router = APIRouter()
-fsd.install(router)
 app.include_router(router)
 app.include_router(classify.router)
 app.include_router(classify_batch.router)
