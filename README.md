@@ -9,7 +9,7 @@
 
 ## Installation
 
-- For ease of use it's recommended to use the provided [docker-compose.yml](https://github.com/doppeltilde/vision_classification/blob/main/docker-compose.yml).
+- For ease of use it's recommended to use the provided [compose.yml](https://github.com/doppeltilde/vision_classification/blob/main/compose.yml).
 
 ```yml
 services:
@@ -27,7 +27,7 @@ services:
 ```
 
 > [!CAUTION]
-> When using [Docker Swarm](https://github.com/doppeltilde/vision_classification/blob/main/docker-compose.swarm.yml), ensure that all necessary volumes are created and accessible before deployment.
+> When using [Docker Swarm](https://github.com/doppeltilde/vision_classification/blob/main/compose.swarm.yml), ensure that all necessary volumes are created and accessible before deployment.
 
 > [!TIP]
 > You can find code examples in the [`examples`](./examples/) folder.
