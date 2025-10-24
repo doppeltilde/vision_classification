@@ -1,9 +1,8 @@
-fastapi[standard]==0.118.0
-Pillow==11.3.0
+fastapi[standard]==0.120.0
+Pillow==12.0.0
 filetype==1.2.0
-torch==2.8.0
-# TODO: install from package index when it's available
-optimum-onnx[onnxruntime] @ git+https://github.com/huggingface/optimum-onnx.git
+torch==2.9.0
+optimum-onnx[onnxruntime]==0.0.3
 python-dotenv==1.1.1
 mediapipe
 numpy
