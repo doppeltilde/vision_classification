@@ -55,7 +55,10 @@ async def process_animated_gif(
 
                 if "predictions" in result and result["predictions"]:
                     for pred in result["predictions"]:
-                        if pred["score"] >= score_threshold:
+                        if (
+                            pred["label"].lower() == label
+                            and pred["score"] > score_threshold
+                        ):
                             logger.info(
                                 f"Early stop triggered at frame {result['frame']} with label {pred['label']} score {pred['score']}"
                             )
