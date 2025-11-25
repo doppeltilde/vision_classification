@@ -5,3 +5,4 @@ optimum-onnx[onnxruntime]==0.0.3
 python-dotenv==1.1.1
 mediapipe
 numpy
+torch==2.9.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
