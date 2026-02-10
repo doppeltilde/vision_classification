@@ -1,8 +1,7 @@
-fastapi[standard]==0.122.0
-Pillow==12.0.0
+fastapi[standard]==0.128.7
+Pillow==12.1.0
 filetype==1.2.0
-optimum-onnx[onnxruntime]==0.0.3
-python-dotenv==1.1.1
+optimum-onnx[onnxruntime]==0.1.0
+python-dotenv==1.2.1
 mediapipe
 numpy
-torch==2.9.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
