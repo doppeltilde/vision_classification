@@ -1,4 +1,4 @@
-FROM python:3.12.11-slim
+FROM python:3.12.13-slim
 WORKDIR /app
 COPY . /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
