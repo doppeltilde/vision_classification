@@ -1,10 +1,17 @@
 # Vision Classification
 
-## Stack:
+## Stack
 - [FastAPI](https://fastapi.tiangolo.com)
 - [MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/guide)
 - [Python](https://www.python.org)
 - [Docker](https://docker.com)
+
+## Tasks
+Depending on the model you choose the following solutions are available:
+- Face detection
+- Face landmark detection
+- Age detection
+- Sensitive content detection
 
 
 ## Installation
