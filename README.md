@@ -7,12 +7,13 @@
 - [Docker](https://docker.com)
 
 ## Tasks
-Depending on the model you choose the following solutions are available:
+Depending on the model you choose the following tasks are available:
 - Face detection
 - Face landmark detection
 - Age detection
 - Sensitive content detection
 
+A public list of useable models can be found [here](https://huggingface.co/models?pipeline_tag=image-classification&library=onnx,transformers.js&sort=trending).
 
 ## Installation
 
@@ -42,7 +43,9 @@ services:
 ## Environment Variables
 - Create a [`.env`](https://github.com/doppeltilde/vision_classification/blob/main/.env.example) file and set the preferred values.
 ```sh
+# The default model used when no other is set.
 DEFAULT_MODEL_NAME=
+# Hugging Face access token used to access private models.
 ACCESS_TOKEN=
 DEFAULT_FACE_DETECTION_MODEL_URL=
 
