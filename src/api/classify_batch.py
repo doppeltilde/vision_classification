@@ -4,7 +4,7 @@ from typing import List, Dict, Any
 from src.middleware.auth import get_api_key
 from src.api.classify import classify
 
-router = APIRouter()
+router = APIRouter(tags=["Classify Images"])
 
 
 @router.post("/api/classify/batch", dependencies=[Depends(get_api_key)])

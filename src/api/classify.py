@@ -12,7 +12,7 @@ from src.shared.shared import load_model
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(tags=["Classify Images"])
 
 
 @router.post("/api/classify", dependencies=[Depends(get_api_key)])

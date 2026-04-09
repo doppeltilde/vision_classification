@@ -60,15 +60,30 @@ LOG_LEVEL=INFO
 
 ## Usage
 
+> [!TIP]
+> Interactive API documentation can be found at: http://localhost:8000/docs
+
+The API is divided into two distinct categories: Classify Images and MediaPipe Tasks.
+
+#### Classify Images
+The **Classify Images** endpoint leverages state-of-the-art models from Hugging Face to perform image classification. It processes input images and returns classification results, including predicted labels and associated confidence scores, based on the selected pre-trained model.
+
+#### Mediapipe tasks
+The **MediaPipe Tasks** endpoint utilizes Google's MediaPipe framework to perform various computer vision tasks. It currently exposes the following features:
+- **Face Detection**  
+  Detects one or more human faces in an image. In addition to returning bounding boxes and detection confidence scores, this task supports:
+  - Automatic cropping and saving of detected face regions
+  - Extraction and saving of facial landmark coordinates for further processing or analysis
+
+- **Pose Landmark Detection**  
+  Identifies and tracks the human body pose by detecting key anatomical landmarks (such as shoulders, elbows, wrists, hips, knees, ankles, etc.). The module returns the coordinates of each landmark along with visibility and presence scores.
+
 > [!IMPORTANT]
 > Set the log level to DEBUG, this will generate an api key, hash, and salt for you.
 > Just don't forget to set it back to INFO.
 
 > [!NOTE]
 > Please be aware that the initial classification process may require some time, as the model is being downloaded.
-
-> [!TIP]
-> Interactive API documentation can be found at: http://localhost:8000/docs
 
 ---
 _Notice:_ _This project was initally created to be used in-house, as such the

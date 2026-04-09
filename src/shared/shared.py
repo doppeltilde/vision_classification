@@ -31,6 +31,7 @@ log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 # https://storage.googleapis.com/mediapipe-assets/MediaPipe%20BlazeFace%20Model%20Card%20(Short%20Range).pdf
 # https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MediaPipe%20Face%20Mesh%20V2.pdf
 # https://storage.googleapis.com/mediapipe-assets/Model%20Card%20Blendshape%20V2.pdf
+# https://storage.googleapis.com/mediapipe-assets/Model%20Card%20BlazePose%20GHUM%203D.pdf
 
 mediapipe_model_storage_url = "https://storage.googleapis.com/mediapipe-models"
 
@@ -54,6 +55,12 @@ models = {
         "env_var": "DEFAULT_OBJECT_DETECTION_MODEL_URL",
         "default_path": "object_detector/efficientdet_lite0/float16/latest/efficientdet_lite0.tflite",
         "filename": "efficientdet_lite0.tflite",
+    },
+    "Pose Landmarker": {
+        "env_var": "DEFAULT_POSE_LANDMARKER_MODEL_URL",
+        "default_path": "pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task",
+        "filename": "pose_landmarker_heavy.task",
+        "model_card": "https://storage.googleapis.com/mediapipe-assets/Model%20Card%20BlazePose%20GHUM%203D.pdf"
     },
 }
 
