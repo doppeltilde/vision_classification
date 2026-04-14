@@ -28,6 +28,7 @@ use_api_key = os.getenv("USE_API_KEY", "False").lower() in ["true", "1", "yes"]
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 
 # START MEDIAPIPE
+
 # https://storage.googleapis.com/mediapipe-assets/MediaPipe%20BlazeFace%20Model%20Card%20(Short%20Range).pdf
 # https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MediaPipe%20Face%20Mesh%20V2.pdf
 # https://storage.googleapis.com/mediapipe-assets/Model%20Card%20Blendshape%20V2.pdf
@@ -36,33 +37,42 @@ log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 mediapipe_model_storage_url = "https://storage.googleapis.com/mediapipe-models"
 
 models = {
+    "Image Classification": {
+        "env_var": "DEFAULT_IMAGE_CLASSIFICATION_MODEL_URL",
+        "default_path": f"{mediapipe_model_storage_url}/image_classifier/efficientnet_lite2/float32/latest/efficientnet_lite2.tflite",
+        "filename": "efficientnet_lite2.tflite",
+    },
     "Face Detection": {
         "env_var": "DEFAULT_FACE_DETECTION_MODEL_URL",
-        "default_path": "face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite",
+        "default_path": f"{mediapipe_model_storage_url}/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite",
         "filename": "blaze_face_short_range.tflite",
     },
     "Face Landmark": {
         "env_var": "DEFAULT_FACE_LANDMARK_MODEL_URL",
-        "default_path": "face_landmarker/face_landmarker/float16/latest/face_landmarker.task",
+        "default_path": f"{mediapipe_model_storage_url}/face_landmarker/face_landmarker/float16/latest/face_landmarker.task",
         "filename": "face_landmarker.task",
     },
     "Gesture Recognition": {
         "env_var": "DEFAULT_GESTURE_RECOGNITION_MODEL_URL",
-        "default_path": "gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task",
+        "default_path": f"{mediapipe_model_storage_url}/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task",
         "filename": "gesture_recognizer.task",
     },
     "Object Detection": {
         "env_var": "DEFAULT_OBJECT_DETECTION_MODEL_URL",
-        "default_path": "object_detector/efficientdet_lite0/float16/latest/efficientdet_lite0.tflite",
+        "default_path": f"{mediapipe_model_storage_url}/object_detector/efficientdet_lite0/float16/latest/efficientdet_lite0.tflite",
         "filename": "efficientdet_lite0.tflite",
     },
     "Pose Landmarker": {
         "env_var": "DEFAULT_POSE_LANDMARKER_MODEL_URL",
-        "default_path": "pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task",
+        "default_path": f"{mediapipe_model_storage_url}/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task",
         "filename": "pose_landmarker_heavy.task",
-        "model_card": "https://storage.googleapis.com/mediapipe-assets/Model%20Card%20BlazePose%20GHUM%203D.pdf"
+        "model_card": "https://storage.googleapis.com/mediapipe-assets/Model%20Card%20BlazePose%20GHUM%203D.pdf",
     },
 }
+
+
+def get_custom_model(model_name: str) -> str:
+    return os.path.join(MODEL_DIR, model_name)
 
 
 def get_model_by_name(model_name: str) -> str:
@@ -70,9 +80,7 @@ def get_model_by_name(model_name: str) -> str:
 
 
 for model_name, config in models.items():
-    model_url = os.getenv(
-        config["env_var"], f"{mediapipe_model_storage_url}/{config['default_path']}"
-    )
+    model_url = os.getenv(config["env_var"], config["default_path"])
     model_path = os.path.join(MODEL_DIR, config["filename"])
 
     if os.path.exists(model_path):
