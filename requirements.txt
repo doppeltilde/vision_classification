@@ -3,5 +3,4 @@ Pillow==12.3.0
 filetype==1.2.0
 optimum-onnx[onnxruntime]==0.1.0
 python-dotenv==1.2.2
-mediapipe
-numpy
+mediapipe==1.0.0
