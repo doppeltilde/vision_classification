@@ -1,22 +1,20 @@
 FROM python:3.14.6-slim
 WORKDIR /app
-COPY . /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     libgl1 \
     libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --upgrade pip
+COPY requirements.txt /app/
 
-RUN pip install --no-cache-dir \
-    torch torchvision torchaudio \
-    --index-url https://download.pytorch.org/whl/cpu
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip && \
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu && \
+    pip install -r requirements.txt && \
+    pip list | grep -E 'torch|nvidia|triton|onnxruntime' && echo "Installation verified"
 
-RUN pip install --no-cache-dir -r requirements.txt
-
-RUN pip list | grep -E 'torch|nvidia|triton|onnxruntime' && echo "Installation verified"
+COPY . /app
 
 CMD ["fastapi", "run", "main.py", "--proxy-headers", "--host", "0.0.0.0", "--port", "8000"]
