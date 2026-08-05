@@ -30,7 +30,7 @@ Future<void> main() async {
 
   if (response.statusCode == 200) {
     print("==============================================");
-    beautify(response.body);
+    beautify(jsonString: response.body);
     print("==============================================");
   }
 }
@@ -46,7 +46,7 @@ Future<Uint8List> fetchNetworkImage() async {
   return response.bodyBytes;
 }
 
-beautify(jsonString) {
+void beautify({required String jsonString}) {
   try {
     dynamic decodedJson = jsonDecode(jsonString);
 
