@@ -45,10 +45,8 @@ async def process_single_image(
                     "predictions": None,
                 }
             else:
-                # One shared ID for the whole image
                 file_id = uuid.uuid4().hex
 
-                # Save a SINGLE annotated full image with ALL faces
                 if save_cropped:
                     save_annotated_faces(
                         img,
@@ -62,9 +60,9 @@ async def process_single_image(
                     cropped = crop_face_from_image(
                         img,
                         loc,
-                        save_cropped=save_cropped,          # individual crops (optional)
+                        save_cropped=save_cropped,
                         save_landmark=save_landmark,
-                        file_id=f"{file_id}_{i}",           # unique name per crop
+                        file_id=f"{file_id}_{i}",
                     )
                     pred = await asyncio.to_thread(model, cropped)
                     if pred:
