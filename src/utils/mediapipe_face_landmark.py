@@ -21,6 +21,7 @@ options = FaceLandmarkerOptions(
     base_options=BaseOptions(model_asset_path=face_detection_model_path),
     running_mode=VisionRunningMode.IMAGE,
     num_faces=5,
+    min_face_detection_confidence=0.3,
 )
 landmarker = FaceLandmarker.create_from_options(options)
 
@@ -49,7 +50,7 @@ def mediapipe_face_landmark_detection(
                 for landmark in face_landmarks:
                     x = landmark.x * img_width
                     y = landmark.y * img_height
-                    radius = 0.5
+                    radius = 0.25
                     draw.ellipse(
                         (x - radius, y - radius, x + radius, y + radius),
                         fill="red",

@@ -1,13 +1,11 @@
-import os
-
-from PIL import Image, ImageDraw, ImageFont
-import uuid
 import logging
-
-logger = logging.getLogger(__name__)
-
+import os
+import uuid
+from PIL import Image, ImageDraw, ImageFont
 from src.shared.shared import OUTPUT_DIR
 from src.utils.mediapipe_face_landmark import mediapipe_face_landmark_detection
+
+logger = logging.getLogger(__name__)
 
 
 def crop_face_from_image(
@@ -16,11 +14,16 @@ def crop_face_from_image(
     padding: float = 0.1,
     save_cropped: bool = False,
     save_landmark: bool = False,
+    file_id: str | None = None,
 ) -> Image.Image:
-    fileId = uuid.uuid4().hex
+    """
+    Crop a single face from the image (with optional padding).
+    Optionally saves the annotated crop and runs landmark detection on it.
+    """
+    if file_id is None:
+        file_id = uuid.uuid4().hex
 
     img_width, img_height = img.size
-
     pixel_coords = face_location["pixel"]
     confidence_score = face_location["confidence"]
 
@@ -32,54 +35,80 @@ def crop_face_from_image(
     right = min(img_width, pixel_coords["xmax"] + width_padding)
     bottom = min(img_height, pixel_coords["ymax"] + height_padding)
 
-    face_img = img.crop((left, top, right, bottom))
+    clean_face_img = img.crop((left, top, right, bottom))
 
     if save_cropped:
         score_text = f"Score: {confidence_score:.2f}"
-
-        text_x = 5
-        text_y = 5
-
-        font_path = "assets/Roboto-ExtraBold.ttf"
-        font_size = 30
-
         try:
-            font = ImageFont.truetype(font_path, font_size)
-            print(f"Successfully loaded font: {font_path} with size {font_size}")
-
-        except IOError:
+            font = ImageFont.truetype("assets/Roboto-ExtraBold.ttf", 14)
+        except OSError:
+            logger.warning("Failed to load font assets/Roboto-ExtraBold.ttf, using default.")
             font = ImageFont.load_default()
 
-        annotated_img = img.copy()
-        drawFull = ImageDraw.Draw(annotated_img)
+        annotated_crop = clean_face_img.copy()
+        draw_crop = ImageDraw.Draw(annotated_crop)
+        draw_crop.text((5, 5), score_text, font=font, fill="white")
 
-        pixel_coords = face_location["pixel"]
-
-        x1 = pixel_coords["xmin"]
-        y1 = pixel_coords["ymin"]
-        x2 = pixel_coords["xmax"]
-        y2 = pixel_coords["ymax"]
-
-        drawFull.rectangle([(x1, y1), (x2, y2)], outline="red", width=5)
-        drawFull.text((text_x, text_y), score_text, font=font, fill="red")
-
-        filename = f"{fileId}_face.jpg"
-        file_path = os.path.join(OUTPUT_DIR, filename)
-        annotated_img.save(file_path, "JPEG", quality=95)
-        logger.info(f"Saved full image with score to: {file_path}")
+        cropped_path = os.path.join(OUTPUT_DIR, f"{file_id}_cropped.jpg")
+        annotated_crop.save(cropped_path, "JPEG", quality=95)
+        logger.info(f"Saved cropped face with score to: {cropped_path}")
 
         if save_landmark:
-            mediapipe_face_landmark_detection(annotated_img, f"{fileId}_full")
+            mediapipe_face_landmark_detection(annotated_crop, f"{file_id}_cropped")
 
-        draw = ImageDraw.Draw(face_img)
-        draw.text((text_x, text_y), score_text, font=font, fill="red")
+    return clean_face_img
 
-        croppedfilename = f"{fileId}_cropped.jpg"
-        cropped_file_path = os.path.join(OUTPUT_DIR, croppedfilename)
-        face_img.save(cropped_file_path, "JPEG", quality=95)
-        logger.info(f"Saved cropped face with score to: {cropped_file_path}")
+def save_annotated_faces(
+    img: Image.Image,
+    face_locations: list[dict],
+    file_id: str | None = None,
+    save_landmark: bool = False,
+) -> str:
+    """
+    Draw bounding boxes + confidence scores + light filter for ALL detected faces
+    onto a single image and save it as one *_face.jpg.
+    """
+    if file_id is None:
+        file_id = uuid.uuid4().hex
 
-        if save_landmark:
-            mediapipe_face_landmark_detection(face_img, f"{fileId}_cropped")
+    # Convert base image to RGBA for alpha compositing
+    annotated = img.convert("RGBA")
+    overlay = Image.new("RGBA", annotated.size, (0, 0, 0, 0))
+    draw_overlay = ImageDraw.Draw(overlay)
 
-    return face_img
+    try:
+        font = ImageFont.truetype("assets/Roboto-ExtraBold.ttf", 20)
+    except OSError:
+        logger.warning("Failed to load font assets/Roboto-ExtraBold.ttf, using default.")
+        font = ImageFont.load_default()
+
+    for face in face_locations:
+        coords = face["pixel"]
+        score = face["confidence"]
+        score_text = f"Score: {score:.2f}"
+
+        bbox = [(coords["xmin"], coords["ymin"]), (coords["xmax"], coords["ymax"])]
+
+        # Draw semi-transparent white filter inside the box (RGBA white with 40/255 alpha)
+        draw_overlay.rounded_rectangle(
+            bbox,
+            radius=15,
+            fill=(255, 255, 255, 40),
+            outline="white",
+            width=5,
+        )
+
+        text_y = max(5, coords["ymin"] - 35)
+        draw_overlay.text((coords["xmin"], text_y), score_text, font=font, fill="white")
+
+    # Composite the transparent filter overlay onto the original image
+    annotated = Image.alpha_composite(annotated, overlay).convert("RGB")
+
+    out_path = os.path.join(OUTPUT_DIR, f"{file_id}_face.jpg")
+    annotated.save(out_path, "JPEG", quality=95)
+    logger.info(f"Saved single annotated image with {len(face_locations)} face(s) → {out_path}")
+
+    if save_landmark:
+        mediapipe_face_landmark_detection(annotated, f"{file_id}_full")
+
+    return out_path

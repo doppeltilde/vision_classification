@@ -2,6 +2,8 @@ import logging
 import os
 import urllib.request
 from typing import Any, Dict, Optional
+from urllib.parse import urlparse
+
 from optimum.pipelines import pipeline
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -18,12 +20,11 @@ class Settings(BaseSettings):
     use_api_key: bool = False
     log_level: str = "INFO"
 
-    # MediaPipe Model URLs
     default_image_classification_model_url: str = (
         f"{MEDIAPIPE_MODEL_STORAGE_URL}/image_classifier/efficientnet_lite2/float32/latest/efficientnet_lite2.tflite"
     )
     default_face_detection_model_url: str = (
-        f"{MEDIAPIPE_MODEL_STORAGE_URL}/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite"
+        f"{MEDIAPIPE_MODEL_STORAGE_URL}/face_detector/blaze_face_full_range/float16/latest/blaze_face_full_range.tflite"
     )
     default_face_landmark_model_url: str = (
         f"{MEDIAPIPE_MODEL_STORAGE_URL}/face_landmarker/face_landmarker/float16/latest/face_landmarker.task"
@@ -51,33 +52,36 @@ MODEL_DIR = "./mediapipe_models"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
 
+
+def get_filename_from_url(url: str) -> str:
+    path = urlparse(url).path
+    return os.path.basename(path)
+
+
 models = {
     "Image Classification": {
         "url": settings.default_image_classification_model_url,
-        "filename": "efficientnet_lite2.tflite",
     },
     "Face Detection": {
         "url": settings.default_face_detection_model_url,
-        "filename": "blaze_face_short_range.tflite",
     },
     "Face Landmark": {
         "url": settings.default_face_landmark_model_url,
-        "filename": "face_landmarker.task",
     },
     "Gesture Recognition": {
         "url": settings.default_gesture_recognition_model_url,
-        "filename": "gesture_recognizer.task",
     },
     "Object Detection": {
         "url": settings.default_object_detection_model_url,
-        "filename": "efficientdet_lite0.tflite",
     },
     "Pose Landmarker": {
         "url": settings.default_pose_landmarker_model_url,
-        "filename": "pose_landmarker_heavy.task",
         "model_card": "https://storage.googleapis.com/mediapipe-assets/Model%20Card%20BlazePose%20GHUM%203D.pdf",
     },
 }
+
+for config in models.values():
+    config["filename"] = get_filename_from_url(config["url"])
 
 
 def get_custom_model(model_name: str) -> str:
