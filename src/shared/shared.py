@@ -1,18 +1,49 @@
-from dotenv import load_dotenv
-import os, urllib.request
-from optimum.pipelines import pipeline
 import logging
-from typing import Optional, Dict, Any
+import os
+import urllib.request
+from typing import Any, Dict, Optional
+from optimum.pipelines import pipeline
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
 
-load_dotenv()
+MEDIAPIPE_MODEL_STORAGE_URL = "https://storage.googleapis.com/mediapipe-models"
 
-access_token = os.getenv("ACCESS_TOKEN", None)
-default_model_name = os.getenv(
-    "DEFAULT_MODEL_NAME", "onnx-community/nsfw_image_detection-ONNX"
-)
 
+class Settings(BaseSettings):
+    access_token: Optional[str] = None
+    default_model_name: str = "onnx-community/nsfw_image_detection-ONNX"
+    api_key_salt: str = ""
+    api_key_hash: str = ""
+    use_api_key: bool = False
+    log_level: str = "INFO"
+
+    # MediaPipe Model URLs
+    default_image_classification_model_url: str = (
+        f"{MEDIAPIPE_MODEL_STORAGE_URL}/image_classifier/efficientnet_lite2/float32/latest/efficientnet_lite2.tflite"
+    )
+    default_face_detection_model_url: str = (
+        f"{MEDIAPIPE_MODEL_STORAGE_URL}/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite"
+    )
+    default_face_landmark_model_url: str = (
+        f"{MEDIAPIPE_MODEL_STORAGE_URL}/face_landmarker/face_landmarker/float16/latest/face_landmarker.task"
+    )
+    default_gesture_recognition_model_url: str = (
+        f"{MEDIAPIPE_MODEL_STORAGE_URL}/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task"
+    )
+    default_object_detection_model_url: str = (
+        f"{MEDIAPIPE_MODEL_STORAGE_URL}/object_detector/efficientdet_lite0/float16/latest/efficientdet_lite0.tflite"
+    )
+    default_pose_landmarker_model_url: str = (
+        f"{MEDIAPIPE_MODEL_STORAGE_URL}/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task"
+    )
+
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+    )
+
+
+settings = Settings()
 
 OUTPUT_DIR = "./cropped_faces"
 MODEL_DIR = "./mediapipe_models"
@@ -20,51 +51,29 @@ MODEL_DIR = "./mediapipe_models"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-# API KEY
-stored_api_key_salt = os.getenv("API_KEY_SALT", "")
-stored_api_key_hash = os.getenv("API_KEY_HASH", "")
-use_api_key = os.getenv("USE_API_KEY", "False").lower() in ["true", "1", "yes"]
-
-log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-
-# START MEDIAPIPE
-
-# https://storage.googleapis.com/mediapipe-assets/MediaPipe%20BlazeFace%20Model%20Card%20(Short%20Range).pdf
-# https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MediaPipe%20Face%20Mesh%20V2.pdf
-# https://storage.googleapis.com/mediapipe-assets/Model%20Card%20Blendshape%20V2.pdf
-# https://storage.googleapis.com/mediapipe-assets/Model%20Card%20BlazePose%20GHUM%203D.pdf
-
-mediapipe_model_storage_url = "https://storage.googleapis.com/mediapipe-models"
-
 models = {
     "Image Classification": {
-        "env_var": "DEFAULT_IMAGE_CLASSIFICATION_MODEL_URL",
-        "default_path": f"{mediapipe_model_storage_url}/image_classifier/efficientnet_lite2/float32/latest/efficientnet_lite2.tflite",
+        "url": settings.default_image_classification_model_url,
         "filename": "efficientnet_lite2.tflite",
     },
     "Face Detection": {
-        "env_var": "DEFAULT_FACE_DETECTION_MODEL_URL",
-        "default_path": f"{mediapipe_model_storage_url}/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite",
+        "url": settings.default_face_detection_model_url,
         "filename": "blaze_face_short_range.tflite",
     },
     "Face Landmark": {
-        "env_var": "DEFAULT_FACE_LANDMARK_MODEL_URL",
-        "default_path": f"{mediapipe_model_storage_url}/face_landmarker/face_landmarker/float16/latest/face_landmarker.task",
+        "url": settings.default_face_landmark_model_url,
         "filename": "face_landmarker.task",
     },
     "Gesture Recognition": {
-        "env_var": "DEFAULT_GESTURE_RECOGNITION_MODEL_URL",
-        "default_path": f"{mediapipe_model_storage_url}/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task",
+        "url": settings.default_gesture_recognition_model_url,
         "filename": "gesture_recognizer.task",
     },
     "Object Detection": {
-        "env_var": "DEFAULT_OBJECT_DETECTION_MODEL_URL",
-        "default_path": f"{mediapipe_model_storage_url}/object_detector/efficientdet_lite0/float16/latest/efficientdet_lite0.tflite",
+        "url": settings.default_object_detection_model_url,
         "filename": "efficientdet_lite0.tflite",
     },
     "Pose Landmarker": {
-        "env_var": "DEFAULT_POSE_LANDMARKER_MODEL_URL",
-        "default_path": f"{mediapipe_model_storage_url}/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task",
+        "url": settings.default_pose_landmarker_model_url,
         "filename": "pose_landmarker_heavy.task",
         "model_card": "https://storage.googleapis.com/mediapipe-assets/Model%20Card%20BlazePose%20GHUM%203D.pdf",
     },
@@ -80,7 +89,7 @@ def get_model_by_name(model_name: str) -> str:
 
 
 for model_name, config in models.items():
-    model_url = os.getenv(config["env_var"], config["default_path"])
+    model_url = config["url"]
     model_path = os.path.join(MODEL_DIR, config["filename"])
 
     if os.path.exists(model_path):
@@ -96,14 +105,12 @@ for model_name, config in models.items():
         logger.error(f"Error downloading {model_name} model: {e}")
         logger.error(f"URL tried: {model_url}")
 
-# END MEDIAPIPE
-
 _model_cache: Dict[str, Any] = {}
 
 
 def load_model(model_name: Optional[str] = None):
     try:
-        model_to_load = model_name or default_model_name
+        model_to_load = model_name or settings.default_model_name
         logger.debug("DEFAULT MODEL: " + model_to_load)
 
         if model_to_load in _model_cache:
@@ -115,7 +122,7 @@ def load_model(model_name: Optional[str] = None):
             model=model_to_load,
             device=-1,
             accelerator="ort",
-            token=access_token,
+            token=settings.access_token,
         )
         _model_cache[model_to_load] = classifier
         logger.info("Model loaded and cached")

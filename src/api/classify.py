@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from PIL import Image, UnidentifiedImageError
-import io, filetype
+import io, puremagic
 from typing import Dict, Any, Optional
 import logging
 
@@ -59,7 +59,13 @@ async def classify(
         contents = await file.read()
 
         # Validate file type
-        if not filetype.is_image(contents):
+        try:
+            mime_type = puremagic.from_string(contents, mime=True)
+            is_image = mime_type.startswith("image/")
+        except puremagic.PureError:
+            is_image = False
+
+        if not is_image:
             raise HTTPException(
                 status_code=400, detail="File is not a supported image type"
             )

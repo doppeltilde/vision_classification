@@ -1,6 +1,6 @@
 fastapi[standard]==0.141.1
 Pillow==12.3.0
-filetype==1.2.0
+puremagic==2.2.0
 optimum-onnx[onnxruntime]==0.1.0
-python-dotenv==1.2.2
+pydantic-settings==2.14.2
 mediapipe==1.0.0
