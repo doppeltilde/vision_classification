@@ -14,7 +14,7 @@ IOU_THRESHOLD = 0.3
 CONFIDENCE_THRESHOLD = 0.2
 EXCLUDED_CLASSES = ["make_love"]
 
-model = YOLO("./yolo_models/yolo11-v1.1.pt")
+model = YOLO("./models/yolo11-v1.1.pt")
 
 
 def yolo_object_detection(

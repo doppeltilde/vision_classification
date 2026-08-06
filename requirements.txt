@@ -6,3 +6,4 @@ pydantic-settings==2.14.2
 mediapipe==1.0.0
 ultralytics==8.4.115
 supervision==0.30.0
+ai-edge-litert==2.1.6
