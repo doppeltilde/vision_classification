@@ -53,8 +53,8 @@ def mediapipe_face_landmark_detection(
                     radius = 0.25
                     draw.ellipse(
                         (x - radius, y - radius, x + radius, y + radius),
-                        fill="red",
-                        outline="red",
+                        fill="white",
+                        outline="white",
                     )
         filename = f"{fileId}_landmark.jpg"
         file_path = os.path.join(OUTPUT_DIR, filename)

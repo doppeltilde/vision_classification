@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
 from optimum.pipelines import pipeline
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
@@ -20,23 +21,23 @@ class Settings(BaseSettings):
     use_api_key: bool = False
     log_level: str = "INFO"
 
-    default_image_classification_model_url: str = (
-        f"{MEDIAPIPE_MODEL_STORAGE_URL}/image_classifier/efficientnet_lite2/float32/latest/efficientnet_lite2.tflite"
+    default_image_classification_model_url: str = Field(
+        default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/image_classifier/efficientnet_lite2/float32/latest/efficientnet_lite2.tflite"
     )
-    default_face_detection_model_url: str = (
-        f"{MEDIAPIPE_MODEL_STORAGE_URL}/face_detector/blaze_face_full_range/float16/latest/blaze_face_full_range.tflite"
+    default_face_detection_model_url: str = Field(
+        default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/face_detector/blaze_face_full_range/float16/latest/blaze_face_full_range.tflite"
     )
-    default_face_landmark_model_url: str = (
-        f"{MEDIAPIPE_MODEL_STORAGE_URL}/face_landmarker/face_landmarker/float16/latest/face_landmarker.task"
+    default_face_landmark_model_url: str = Field(
+        default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/face_landmarker/face_landmarker/float16/latest/face_landmarker.task"
     )
-    default_gesture_recognition_model_url: str = (
-        f"{MEDIAPIPE_MODEL_STORAGE_URL}/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task"
+    default_gesture_recognition_model_url: str = Field(
+        default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task"
     )
-    default_object_detection_model_url: str = (
-        f"{MEDIAPIPE_MODEL_STORAGE_URL}/object_detector/efficientdet_lite0/float16/latest/efficientdet_lite0.tflite"
+    default_object_detection_model_url: str = Field(
+        default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/object_detector/efficientdet_lite0/float16/latest/efficientdet_lite0.tflite"
     )
-    default_pose_landmarker_model_url: str = (
-        f"{MEDIAPIPE_MODEL_STORAGE_URL}/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task"
+    default_pose_landmarker_model_url: str = Field(
+        default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task"
     )
 
     model_config = SettingsConfigDict(
