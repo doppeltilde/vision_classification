@@ -34,11 +34,14 @@ class Settings(BaseSettings):
         default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task"
     )
     default_object_detection_model_url: str = Field(
-        default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/object_detector/efficientdet_lite0/float16/latest/efficientdet_lite0.tflite"
+        default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/object_detector/efficientdet_lite0/float32/latest/efficientdet_lite0.tflite"
     )
     default_pose_landmarker_model_url: str = Field(
         default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task"
     )
+    default_hand_landmark_model_url: str = Field(
+            default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task"
+        )
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
@@ -78,6 +81,9 @@ models = {
     "Pose Landmarker": {
         "url": settings.default_pose_landmarker_model_url,
         "model_card": "https://storage.googleapis.com/mediapipe-assets/Model%20Card%20BlazePose%20GHUM%203D.pdf",
+    },
+    "Hand Landmarker": {
+     "url": settings.default_hand_landmark_model_url,
     },
 }
 

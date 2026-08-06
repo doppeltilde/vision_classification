@@ -26,6 +26,7 @@ async def process_single_image(
 
         if not detect_faces:
             predictions = await asyncio.to_thread(model, img)
+            print(predictions)
             result = {
                 "type": "single_image",
                 "faces_detected": False,

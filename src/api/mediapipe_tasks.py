@@ -9,6 +9,8 @@ from src.shared.crop_face_from_image import crop_face_from_image, save_annotated
 from src.utils.mediapipe_face_detector import mediapipe_face_detection
 from src.utils.mediapipe_pose_landmarker import mediapipe_pose_landmarker_detection
 from src.utils.mediapipe_image_classification import mediapipe_image_classification
+from src.utils.mediapipe_object_detection import mediapipe_object_detection, save_annotated_objects
+from src.utils.mediapipe_hand_landmark import mediapipe_hand_landmark_detection, save_annotated_hands
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +107,90 @@ async def classify(
         "pose_detected": pose_detected,
         "pose_count": pose_count,
         "pose_locations": pose_locations,
+    }
+
+
+@router.post("/api/mediapipe/object_detection", dependencies=[Depends(get_api_key)])
+async def classify(
+    file: UploadFile = File(...),
+) -> Dict[str, Any]:
+    contents = await file.read()
+    
+    file_id = os.path.splitext(file.filename)[0] if file.filename else "uploaded_file"
+
+    try:
+        mime_type = puremagic.from_string(contents, mime=True)
+        is_image = mime_type.startswith("image/")
+    except puremagic.PureError:
+        is_image = False
+
+    if not is_image:
+        raise HTTPException(
+            status_code=400, detail="File is not a supported image type"
+        )
+
+    try:
+        image_stream = io.BytesIO(contents)
+        img = Image.open(image_stream)
+    except UnidentifiedImageError:
+        raise HTTPException(status_code=400, detail="Invalid or corrupted image file")
+
+    objects_detected, objects_count, objects_locations, img = mediapipe_object_detection(img)
+    
+    if objects_detected and objects_count > 0:
+        save_annotated_objects(
+            img,
+            objects_locations,
+            file_id=file_id,
+        )
+
+    return {
+        "objects_detected": objects_detected,
+        "objects_count": objects_count,
+        "objects_locations": objects_locations,
+    }
+
+
+
+@router.post("/api/mediapipe/hand_landmark", dependencies=[Depends(get_api_key)])
+async def classify(
+    file: UploadFile = File(...),
+) -> Dict[str, Any]:
+    contents = await file.read()
+    
+    file_id = os.path.splitext(file.filename)[0] if file.filename else "uploaded_file"
+
+    try:
+        mime_type = puremagic.from_string(contents, mime=True)
+        is_image = mime_type.startswith("image/")
+    except puremagic.PureError:
+        is_image = False
+
+    if not is_image:
+        raise HTTPException(
+            status_code=400, detail="File is not a supported image type"
+        )
+
+    try:
+        image_stream = io.BytesIO(contents)
+        img = Image.open(image_stream)
+    except UnidentifiedImageError:
+        raise HTTPException(status_code=400, detail="Invalid or corrupted image file")
+
+    objects_detected, hand_counts, objects_locations, img = mediapipe_hand_landmark_detection(img)
+    
+    if objects_detected and hand_counts > 0:
+        print(hand_counts)
+        save_annotated_hands(
+            img,
+            objects_locations,
+            file_id=file_id,
+        )
+
+    return {
+        "objects_detected": objects_detected,
+        "hand_counts": hand_counts,
+        "objects_locations": objects_locations,
     }
 
 

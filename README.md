@@ -4,10 +4,12 @@
   <tr>
     <td><img src="assets/example.jpg" width="500" alt="Image 1"></td>
     <td><img src="assets/example_full_landmark.jpg" width="500" alt="Image 2"></td>
+    <td><img src="assets/example_pose_landmark.jpg" width="500" alt="Image 3"></td>
   </tr>
    <tr>
-    <td><img src="assets/example_pose_landmark.jpg" width="500" alt="Image 1"></td>
-    <td><img src="assets/flamingo.png" width="500" alt="Image 2"></td>
+    <td><img src="assets/flamingo.png" width="500" alt="Image 4"></td>
+    <td><img src="assets/example_object.jpg" width="500" alt="Image 5"></td>
+    <td><img src="assets/example_hand.jpg" width="500" alt="Image 6"></td>
   </tr>
 </table>
 
