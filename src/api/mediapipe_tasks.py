@@ -11,6 +11,7 @@ from src.utils.mediapipe_pose_landmarker import mediapipe_pose_landmarker_detect
 from src.utils.mediapipe_image_classification import mediapipe_image_classification
 from src.utils.mediapipe_object_detection import mediapipe_object_detection, save_annotated_objects
 from src.utils.mediapipe_hand_landmark import mediapipe_hand_landmark_detection, save_annotated_hands
+from src.utils.yolo_object_detection import yolo_object_detection, yolo_save_annotated_objects
 
 logger = logging.getLogger(__name__)
 
@@ -180,7 +181,6 @@ async def classify(
     objects_detected, hand_counts, objects_locations, img = mediapipe_hand_landmark_detection(img)
     
     if objects_detected and hand_counts > 0:
-        print(hand_counts)
         save_annotated_hands(
             img,
             objects_locations,
@@ -234,4 +234,45 @@ async def classify(
         "count": count,
         "locations": locations,
         "image": image_base64,
+    }
+
+
+@router.post("/api/yolo/object_detection", dependencies=[Depends(get_api_key)])
+async def classify(
+    file: UploadFile = File(...),
+) -> Dict[str, Any]:
+    contents = await file.read()
+    
+    file_id = os.path.splitext(file.filename)[0] if file.filename else "uploaded_file"
+
+    try:
+        mime_type = puremagic.from_string(contents, mime=True)
+        is_image = mime_type.startswith("image/")
+    except puremagic.PureError:
+        is_image = False
+
+    if not is_image:
+        raise HTTPException(
+            status_code=400, detail="File is not a supported image type"
+        )
+
+    try:
+        image_stream = io.BytesIO(contents)
+        img = Image.open(image_stream)
+    except UnidentifiedImageError:
+        raise HTTPException(status_code=400, detail="Invalid or corrupted image file")
+
+    objects_detected, hand_counts, objects_locations, img = yolo_object_detection(img)
+    
+    if objects_detected and hand_counts > 0:
+        yolo_save_annotated_objects(
+            img,
+            objects_locations,
+            file_id=file_id,
+        )
+
+    return {
+        "objects_detected": objects_detected,
+        "hand_counts": hand_counts,
+        "objects_locations": objects_locations,
     }
