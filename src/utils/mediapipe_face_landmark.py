@@ -40,6 +40,10 @@ def mediapipe_face_landmark_detection(
     img: Image.Image,
     fileId: Optional[str] = None,
 ) -> tuple[bool, int, list]:
+    if not fileId:
+        logger.warning("No fileId provided, skipping landmark file save.")
+        return False, 0, []
+
     try:
         img_array = np.array(img.convert('RGB'))
         h, w, _ = img_array.shape
@@ -67,11 +71,12 @@ def mediapipe_face_landmark_detection(
                     if idx < len(points):
                         cv2.circle(annotated_img, points[idx], 3, (255, 255, 255), -1, cv2.LINE_AA)
 
-        final_img = Image.fromarray(cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB))
-        filename = f"{fileId}_landmark.jpg"
-        file_path = os.path.join(OUTPUT_DIR, filename)
-        final_img.save(file_path)
-        logger.info(f"Saved full image with score to: {file_path}")
+        if "full" in fileId or "cropped" in fileId:
+            final_img = Image.fromarray(cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB))
+            filename = f"{fileId}_landmark.jpg"
+            file_path = os.path.join(OUTPUT_DIR, filename)
+            final_img.save(file_path)
+            logger.info(f"Saved full image with score to: {file_path}")
 
         return True, num_faces, results.face_landmarks
 

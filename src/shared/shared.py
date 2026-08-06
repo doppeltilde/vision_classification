@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     default_image_classification_model_url: str = Field(
-        default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/image_classifier/efficientnet_lite2/float32/latest/efficientnet_lite2.tflite"
+        default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/image_classifier/efficientnet_lite0/float32/latest/efficientnet_lite0.tflite"
     )
     default_face_detection_model_url: str = Field(
         default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/face_detector/blaze_face_full_range/float16/latest/blaze_face_full_range.tflite"

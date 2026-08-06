@@ -73,8 +73,8 @@ def mediapipe_face_detection(
 
                     face_locations.append(face_location)
 
-            face_count = len(results.detections)
-            return True, face_count, face_locations
+            face_count = len(face_locations)
+            return face_count > 0, face_count, face_locations
         else:
             return False, 0, []
 

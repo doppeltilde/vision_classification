@@ -1,5 +1,16 @@
 # Vision Classification
 
+<table>
+  <tr>
+    <td><img src="assets/example.jpg" width="500" alt="Image 1"></td>
+    <td><img src="assets/example_full_landmark.jpg" width="500" alt="Image 2"></td>
+  </tr>
+   <tr>
+    <td><img src="assets/example_pose_landmark.jpg" width="500" alt="Image 1"></td>
+    <td><img src="assets/flamingo.png" width="500" alt="Image 2"></td>
+  </tr>
+</table>
+
 ## Stack
 - [FastAPI](https://fastapi.tiangolo.com)
 - [MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/guide)
