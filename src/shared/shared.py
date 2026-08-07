@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     api_key_hash: str = ""
     use_api_key: bool = False
     log_level: str = "INFO"
+    image_signing_secret: str = "your-super-secret-key-change-me"
 
     default_image_classification_model_url: str = Field(
         default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/image_classifier/efficientnet_lite0/float32/latest/efficientnet_lite0.tflite"
@@ -40,8 +41,8 @@ class Settings(BaseSettings):
         default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task"
     )
     default_hand_landmark_model_url: str = Field(
-            default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task"
-        )
+        default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task"
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
@@ -50,7 +51,7 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-OUTPUT_DIR = "./cropped_faces"
+OUTPUT_DIR = "./images"
 MODEL_DIR = "./mediapipe_models"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -83,7 +84,7 @@ models = {
         "model_card": "https://storage.googleapis.com/mediapipe-assets/Model%20Card%20BlazePose%20GHUM%203D.pdf",
     },
     "Hand Landmarker": {
-     "url": settings.default_hand_landmark_model_url,
+        "url": settings.default_hand_landmark_model_url,
     },
 }
 

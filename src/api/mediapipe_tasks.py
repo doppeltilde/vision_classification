@@ -9,10 +9,14 @@ from src.shared.crop_face_from_image import crop_face_from_image, save_annotated
 from src.utils.mediapipe_face_detector import mediapipe_face_detection
 from src.utils.mediapipe_pose_landmarker import mediapipe_pose_landmarker_detection
 from src.utils.mediapipe_image_classification import mediapipe_image_classification
-from src.utils.mediapipe_object_detection import mediapipe_object_detection, save_annotated_objects
-from src.utils.mediapipe_hand_landmark import mediapipe_hand_landmark_detection, save_annotated_hands
-from src.utils.yolo_object_detection import yolo_object_detection, yolo_save_annotated_objects
-from src.utils.litert_objection_detection import litert_object_detection, litert_save_annotated_objects
+from src.utils.mediapipe_object_detection import (
+    mediapipe_object_detection,
+    save_annotated_objects,
+)
+from src.utils.mediapipe_hand_landmark import (
+    mediapipe_hand_landmark_detection,
+    save_annotated_hands,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +30,7 @@ async def classify(
     save_landmark_file: bool = False,
 ) -> Dict[str, Any]:
     contents = await file.read()
-    
+
     file_id = os.path.splitext(file.filename)[0] if file.filename else "uploaded_file"
 
     try:
@@ -47,7 +51,7 @@ async def classify(
         raise HTTPException(status_code=400, detail="Invalid or corrupted image file")
 
     faces_detected, face_count, face_locations = mediapipe_face_detection(img)
-    
+
     if faces_detected and face_count > 0:
         save_annotated_faces(
             img,
@@ -98,7 +102,6 @@ async def classify(
     except UnidentifiedImageError:
         raise HTTPException(status_code=400, detail="Invalid or corrupted image file")
 
-    print(save_pose_landmark_file)
     pose_detected, pose_count, pose_locations, base64img = (
         mediapipe_pose_landmarker_detection(
             img, save_pose_landmark_file=save_pose_landmark_file
@@ -117,7 +120,7 @@ async def classify(
     file: UploadFile = File(...),
 ) -> Dict[str, Any]:
     contents = await file.read()
-    
+
     file_id = os.path.splitext(file.filename)[0] if file.filename else "uploaded_file"
 
     try:
@@ -137,8 +140,10 @@ async def classify(
     except UnidentifiedImageError:
         raise HTTPException(status_code=400, detail="Invalid or corrupted image file")
 
-    objects_detected, objects_count, objects_locations, img = mediapipe_object_detection(img)
-    
+    objects_detected, objects_count, objects_locations, img = (
+        mediapipe_object_detection(img)
+    )
+
     if objects_detected and objects_count > 0:
         save_annotated_objects(
             img,
@@ -153,13 +158,12 @@ async def classify(
     }
 
 
-
 @router.post("/api/mediapipe/hand_landmark", dependencies=[Depends(get_api_key)])
 async def classify(
     file: UploadFile = File(...),
 ) -> Dict[str, Any]:
     contents = await file.read()
-    
+
     file_id = os.path.splitext(file.filename)[0] if file.filename else "uploaded_file"
 
     try:
@@ -179,8 +183,10 @@ async def classify(
     except UnidentifiedImageError:
         raise HTTPException(status_code=400, detail="Invalid or corrupted image file")
 
-    objects_detected, hand_counts, objects_locations, img = mediapipe_hand_landmark_detection(img)
-    
+    objects_detected, hand_counts, objects_locations, img = (
+        mediapipe_hand_landmark_detection(img)
+    )
+
     if objects_detected and hand_counts > 0:
         save_annotated_hands(
             img,
@@ -234,88 +240,5 @@ async def classify(
         "classification": classification,
         "count": count,
         "locations": locations,
-        "image": image_base64,
-    }
-
-
-@router.post("/api/yolo/object_detection", dependencies=[Depends(get_api_key)])
-async def classify(
-    file: UploadFile = File(...),
-) -> Dict[str, Any]:
-    contents = await file.read()
-    
-    file_id = os.path.splitext(file.filename)[0] if file.filename else "uploaded_file"
-
-    try:
-        mime_type = puremagic.from_string(contents, mime=True)
-        is_image = mime_type.startswith("image/")
-    except puremagic.PureError:
-        is_image = False
-
-    if not is_image:
-        raise HTTPException(
-            status_code=400, detail="File is not a supported image type"
-        )
-
-    try:
-        image_stream = io.BytesIO(contents)
-        img = Image.open(image_stream)
-    except UnidentifiedImageError:
-        raise HTTPException(status_code=400, detail="Invalid or corrupted image file")
-
-    objects_detected, hand_counts, objects_locations, img = yolo_object_detection(img)
-    
-    if objects_detected and hand_counts > 0:
-        yolo_save_annotated_objects(
-            img,
-            objects_locations,
-            file_id=file_id,
-        )
-
-    return {
-        "objects_detected": objects_detected,
-        "hand_counts": hand_counts,
-        "objects_locations": objects_locations,
-    }
-
-
-
-@router.post("/api/litert/object_detection", dependencies=[Depends(get_api_key)])
-async def classify(
-    file: UploadFile = File(...),
-) -> Dict[str, Any]:
-    contents = await file.read()
-    
-    file_id = os.path.splitext(file.filename)[0] if file.filename else "uploaded_file"
-
-    try:
-        mime_type = puremagic.from_string(contents, mime=True)
-        is_image = mime_type.startswith("image/")
-    except puremagic.PureError:
-        is_image = False
-
-    if not is_image:
-        raise HTTPException(
-            status_code=400, detail="File is not a supported image type"
-        )
-
-    try:
-        image_stream = io.BytesIO(contents)
-        img = Image.open(image_stream)
-    except UnidentifiedImageError:
-        raise HTTPException(status_code=400, detail="Invalid or corrupted image file")
-
-    objects_detected, hand_counts, objects_locations, img = litert_object_detection(img)
-    
-    if objects_detected and hand_counts > 0:
-        litert_save_annotated_objects(
-            img,
-            objects_locations,
-            file_id=file_id,
-        )
-
-    return {
-        "objects_detected": objects_detected,
-        "hand_counts": hand_counts,
-        "objects_locations": objects_locations,
+        "image_data": image_base64,
     }

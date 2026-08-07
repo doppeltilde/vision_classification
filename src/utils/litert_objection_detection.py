@@ -1,6 +1,7 @@
 import logging
 import os
 import uuid
+import urllib.request
 import cv2
 import numpy as np
 from ai_edge_litert.interpreter import Interpreter
@@ -11,34 +12,70 @@ from src.shared.shared import OUTPUT_DIR
 logger = logging.getLogger(__name__)
 
 MODEL_PATH = "./models/model.litert"
+MODEL_URL = ""
 CONF_THRESHOLD = 0.20
 NMS_THRESHOLD = 0.30
 
-NAMES = ["nahf", "oerngf", "crnav", "erne", "ingvan"]
-
-CT = str.maketrans(
-    "nopqrstuvwxyzabcdefghijklmNOPQRSTUVWXYZABCDEFGHIJKLM",
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-)
 
 def get_name(text: str) -> str:
     return text.translate(CT)
 
-CLASS_NAMES = [get_name(name) for name in NAMES]
+
+CLASS_NAMES = ["anus", "breast", "penis", "rear", "vagina"]
 
 COLORS = [
-    (90, 140, 195),  # Light Brown
-    (128, 0, 128),  # Purple
-    (0, 0, 255),  # Red
-    (90, 140, 195),  # Light Brown
-    (180, 105, 255),  # Pink
+    (90, 140, 195),
+    (128, 0, 128),
+    (0, 0, 255),
+    (90, 140, 195),
+    (180, 105, 255),
 ]
+
+os.makedirs("./models", exist_ok=True)
+
+if not os.path.exists(MODEL_PATH) and MODEL_URL:
+    print("Downloading model...")
+    urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
 
 interpreter = Interpreter(model_path=MODEL_PATH)
 interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 _, INPUT_H, INPUT_W, _ = input_details[0]["shape"]
+
+YUNET_MODEL = "./models/face_detection_yunet_2026may.onnx"
+YUNET_URL = "https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2026may.onnx"
+
+if not os.path.exists(YUNET_MODEL):
+    print("Downloading YuNet face detector...")
+    urllib.request.urlretrieve(YUNET_URL, YUNET_MODEL)
+
+try:
+    face_detector = cv2.FaceDetectorYN.create(
+        YUNET_MODEL, "", (320, 320), score_threshold=0.6, nms_threshold=0.3, top_k=5000
+    )
+    USE_FACE_DETECTOR_YN = True
+except Exception:
+    face_net = cv2.dnn.readNetFromONNX(YUNET_MODEL)
+    USE_FACE_DETECTOR_YN = False
+
+
+def detect_faces(img, conf_threshold=0.6):
+    h, w = img.shape[:2]
+    if USE_FACE_DETECTOR_YN:
+        face_detector.setInputSize((w, h))
+        _, faces = face_detector.detect(img)
+        if faces is None:
+            return []
+        results = []
+        for f in faces:
+            x, y, fw, fh = f[:4].astype(int)
+            score = f[14]
+            if score >= conf_threshold:
+                results.append((x, y, x + fw, y + fh))
+        return results
+    else:
+        return []
 
 
 def pixelate_roi(target_img, src_img, x1, y1, x2, y2, pixel_size):
@@ -59,6 +96,9 @@ def pixelate_roi(target_img, src_img, x1, y1, x2, y2, pixel_size):
 
 def litert_object_detection(
     img: Image.Image,
+    apply_face_blackbox: bool = True,
+    apply_pixelation: bool = True,
+    show_labels: bool = True,
 ) -> tuple[bool, int, list, Image.Image]:
     try:
         img_rgb = np.array(img.convert("RGB"))
@@ -102,9 +142,7 @@ def litert_object_detection(
                         y2 * (orig_h / INPUT_H),
                     )
 
-                boxes_to_process.append(
-                    (x1, y1, x2, y2, float(score), int(class_id))
-                )
+                boxes_to_process.append((x1, y1, x2, y2, float(score), int(class_id)))
 
         else:
             boxes_cxcywh = raw_output[:, :4]
@@ -161,9 +199,6 @@ def litert_object_detection(
                             )
                         )
 
-        if len(boxes_to_process) == 0:
-            return False, 0, [], img
-
         object_locations = []
         annotated_bgr = img_bgr.copy()
         pixel_size = max(1, int(anchor / 15))
@@ -202,50 +237,59 @@ def litert_object_detection(
                 }
             )
 
-            annotated_bgr = pixelate_roi(
-                annotated_bgr, img_bgr, x1_pad, y1_pad, x2_pad, y2_pad, pixel_size
-            )
+            if apply_pixelation:
+                annotated_bgr = pixelate_roi(
+                    annotated_bgr, img_bgr, x1_pad, y1_pad, x2_pad, y2_pad, pixel_size
+                )
 
-            color = COLORS[c_id % len(COLORS)]
-            text = f"{c_name} {conf:.0%}"
+            if show_labels:
+                color = COLORS[c_id % len(COLORS)]
+                text = f"{c_name} {conf:.0%}"
 
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            font_scale = max(0.4, anchor / 1700)
-            thickness = 1
-            (text_w, text_h), baseline = cv2.getTextSize(
-                text, font, font_scale, thickness
-            )
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                font_scale = max(0.4, anchor / 1700)
+                thickness = 1
+                (text_w, text_h), baseline = cv2.getTextSize(
+                    text, font, font_scale, thickness
+                )
 
-            center_x = (x1_pad + x2_pad) // 2
-            center_y = (y1_pad + y2_pad) // 2
-            text_x = max(0, center_x - (text_w // 2))
-            text_y = max(text_h, center_y + (text_h // 2))
+                center_x = (x1_pad + x2_pad) // 2
+                center_y = (y1_pad + y2_pad) // 2
+                text_x = max(0, center_x - (text_w // 2))
+                text_y = max(text_h, center_y + (text_h // 2))
 
-            cv2.rectangle(
-                annotated_bgr,
-                (text_x - 4, text_y - text_h - 4),
-                (text_x + text_w + 4, text_y + baseline + 2),
-                color,
-                -1,
-            )
-            cv2.putText(
-                annotated_bgr,
-                text,
-                (text_x, text_y),
-                font,
-                font_scale,
-                (255, 255, 255),
-                thickness,
-                lineType=cv2.LINE_AA,
-            )
+                cv2.rectangle(
+                    annotated_bgr,
+                    (text_x - 4, text_y - text_h - 4),
+                    (text_x + text_w + 4, text_y + baseline + 2),
+                    color,
+                    -1,
+                )
+                cv2.putText(
+                    annotated_bgr,
+                    text,
+                    (text_x, text_y),
+                    font,
+                    font_scale,
+                    (255, 255, 255),
+                    thickness,
+                    lineType=cv2.LINE_AA,
+                )
+
+        if apply_face_blackbox:
+            faces = detect_faces(img_bgr, conf_threshold=0.55)
+            for x1f, y1f, x2f, y2f in faces:
+                pad = int(max(x2f - x1f, y2f - y1f) * 0.18)
+                x1f = max(0, x1f - pad)
+                y1f = max(0, y1f - pad)
+                x2f = min(orig_w, x2f + pad)
+                y2f = min(orig_h, y2f + pad)
+                cv2.rectangle(annotated_bgr, (x1f, y1f), (x2f, y2f), (0, 0, 0), -1)
 
         object_locations.sort(key=lambda x: x["confidence"], reverse=True)
 
-        annotated_img = Image.fromarray(
-            cv2.cvtColor(annotated_bgr, cv2.COLOR_BGR2RGB)
-        )
+        annotated_img = Image.fromarray(cv2.cvtColor(annotated_bgr, cv2.COLOR_BGR2RGB))
         object_count = len(object_locations)
-        print(object_count)
 
         return object_count > 0, object_count, object_locations, annotated_img
 

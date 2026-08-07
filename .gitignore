@@ -1,7 +1,7 @@
 dev
 __pycache__
 .env
-cropped_faces
+images
 .venv
 mediapipe_models
 dump.txt

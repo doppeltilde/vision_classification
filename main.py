@@ -2,7 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI
 
-from src.api import classify, classify_batch, mediapipe_tasks
+from src.api import classify, classify_batch, mediapipe_tasks, object_detection_tasks
 from src.helper.generate_api_key_and_hash import (
     generate_api_key_and_hash_with_salt,
 )
@@ -19,6 +19,10 @@ tags_metadata = [
     {
         "name": "Mediapipe Tasks",
         "description": "Endpoints for mediapipe vision tasks.",
+    },
+    {
+        "name": "Object Detection Tasks",
+        "description": "Endpoints for object detection tasks.",
     },
 ]
 
@@ -46,6 +50,7 @@ app = FastAPI(lifespan=lifespan, openapi_tags=tags_metadata)
 app.include_router(classify.router)
 app.include_router(classify_batch.router)
 app.include_router(mediapipe_tasks.router)
+app.include_router(object_detection_tasks.router)
 
 
 @app.get("/", dependencies=[Depends(get_api_key)])

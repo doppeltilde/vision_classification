@@ -1,6 +1,8 @@
 import os
 import uuid
 import logging
+import urllib.request
+import cv2
 import numpy as np
 import supervision as sv
 from PIL import Image
@@ -16,9 +18,47 @@ EXCLUDED_CLASSES = ["make_love"]
 
 model = YOLO("./models/yolo11-v1.1.pt")
 
+YUNET_MODEL = "./models/face_detection_yunet_2026may.onnx"
+YUNET_URL = "https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2026may.onnx"
+
+os.makedirs("./models", exist_ok=True)
+
+if not os.path.exists(YUNET_MODEL):
+    urllib.request.urlretrieve(YUNET_URL, YUNET_MODEL)
+
+try:
+    face_detector = cv2.FaceDetectorYN.create(
+        YUNET_MODEL, "", (320, 320), score_threshold=0.6, nms_threshold=0.3, top_k=5000
+    )
+    USE_FACE_DETECTOR_YN = True
+except Exception:
+    face_net = cv2.dnn.readNetFromONNX(YUNET_MODEL)
+    USE_FACE_DETECTOR_YN = False
+
+
+def detect_faces(img, conf_threshold=0.6):
+    h, w = img.shape[:2]
+    if USE_FACE_DETECTOR_YN:
+        face_detector.setInputSize((w, h))
+        _, faces = face_detector.detect(img)
+        if faces is None:
+            return []
+        results = []
+        for f in faces:
+            x, y, fw, fh = f[:4].astype(int)
+            score = f[14]
+            if score >= conf_threshold:
+                results.append((x, y, x + fw, y + fh))
+        return results
+    else:
+        return []
+
 
 def yolo_object_detection(
     img: Image.Image,
+    apply_face_blackbox: bool = True,
+    apply_pixelation: bool = True,
+    show_labels: bool = True,
 ) -> tuple[bool, int, list, Image.Image]:
     try:
         img_rgb = np.array(img.convert("RGB"))
@@ -89,25 +129,39 @@ def yolo_object_detection(
 
         object_locations.sort(key=lambda x: x["confidence"], reverse=True)
 
-        pixelate_annotator = sv.PixelateAnnotator(pixel_size=int(anchor / 15))
-        label_annotator = sv.LabelAnnotator(
-            text_color=sv.Color.BLACK,
-            text_position=sv.Position.CENTER,
-            text_scale=max(0.4, anchor / 1700),
-        )
+        annotated_bgr = img_bgr.copy()
 
-        formatted_labels = [
-            f"{name} {conf:.0%}"
-            for name, conf in zip(detections.data["class_name"], detections.confidence)
-        ]
+        if apply_pixelation:
+            pixelate_annotator = sv.PixelateAnnotator(pixel_size=int(anchor / 15))
+            annotated_bgr = pixelate_annotator.annotate(
+                scene=annotated_bgr, detections=detections
+            )
 
-        annotated_bgr = pixelate_annotator.annotate(
-            scene=img_bgr.copy(), detections=detections
-        )
-        
-        annotated_bgr = label_annotator.annotate(
-            scene=annotated_bgr, detections=detections, labels=formatted_labels
-        )
+        if show_labels:
+            label_annotator = sv.LabelAnnotator(
+                text_color=sv.Color.BLACK,
+                text_position=sv.Position.CENTER,
+                text_scale=max(0.4, anchor / 1700),
+            )
+            formatted_labels = [
+                f"{name} {conf:.0%}"
+                for name, conf in zip(
+                    detections.data["class_name"], detections.confidence
+                )
+            ]
+            annotated_bgr = label_annotator.annotate(
+                scene=annotated_bgr, detections=detections, labels=formatted_labels
+            )
+
+        if apply_face_blackbox:
+            faces = detect_faces(img_bgr, conf_threshold=0.55)
+            for x1f, y1f, x2f, y2f in faces:
+                pad = int(max(x2f - x1f, y2f - y1f) * 0.18)
+                x1f = max(0, x1f - pad)
+                y1f = max(0, y1f - pad)
+                x2f = min(w, x2f + pad)
+                y2f = min(h, y2f + pad)
+                cv2.rectangle(annotated_bgr, (x1f, y1f), (x2f, y2f), (0, 0, 0), -1)
 
         annotated_img = Image.fromarray(annotated_bgr[..., ::-1])
 

@@ -43,7 +43,7 @@ def mediapipe_object_detection(
                 category = detection.categories[0]
                 confidence_score = category.score
                 category_name = category.category_name
-                
+
                 if confidence_score >= 0.5:
                     logger.info(confidence_score)
 
@@ -92,7 +92,9 @@ def mediapipe_object_detection(
         logger.error(f"Error in object detection: {e}", exc_info=True)
         return False, 0, [], img
 
+
 logger = logging.getLogger(__name__)
+
 
 def save_annotated_objects(
     img: Image.Image,
@@ -102,7 +104,9 @@ def save_annotated_objects(
     if not file_id:
         file_id = uuid.uuid4().hex
 
-    sorted_objects = sorted(object_locations, key=lambda x: x["confidence"], reverse=True)
+    sorted_objects = sorted(
+        object_locations, key=lambda x: x["confidence"], reverse=True
+    )
 
     annotated = img.convert("RGBA")
     overlay = Image.new("RGBA", annotated.size, (0, 0, 0, 0))
@@ -111,7 +115,9 @@ def save_annotated_objects(
     try:
         font = ImageFont.truetype("assets/Roboto-ExtraBold.ttf", 20)
     except OSError:
-        logger.warning("Failed to load font assets/Roboto-ExtraBold.ttf, using default.")
+        logger.warning(
+            "Failed to load font assets/Roboto-ExtraBold.ttf, using default."
+        )
         font = ImageFont.load_default()
 
     for obj in sorted_objects:
@@ -137,6 +143,8 @@ def save_annotated_objects(
 
     out_path = os.path.join(OUTPUT_DIR, f"{file_id}_object.jpg")
     annotated.save(out_path, "JPEG", quality=95)
-    logger.info(f"Saved single annotated image with {len(sorted_objects)} object(s) -> {out_path}")
+    logger.info(
+        f"Saved single annotated image with {len(sorted_objects)} object(s) -> {out_path}"
+    )
 
     return out_path
