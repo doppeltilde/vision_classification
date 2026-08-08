@@ -7,3 +7,4 @@ mediapipe_models
 dump.txt
 /.vscode
 .DS_STORE
+runs
