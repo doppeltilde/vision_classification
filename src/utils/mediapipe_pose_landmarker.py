@@ -5,10 +5,11 @@ import uuid
 from io import BytesIO
 from typing import Optional
 
+import cv2
 import mediapipe as mp
 import numpy as np
 from mediapipe.tasks.python.components.containers.landmark import NormalizedLandmark
-from PIL import Image, ImageDraw, ImageOps
+from PIL import Image, ImageOps
 
 from src.shared.shared import OUTPUT_DIR, get_model_by_name
 
@@ -42,13 +43,34 @@ options_single = PoseLandmarkerOptions(
 poselandmarker_single = PoseLandmarker.create_from_options(options_single)
 
 POSE_CONNECTIONS = (
-    (0, 1), (1, 2), (2, 3), (3, 7), (0, 4), (4, 5), (5, 6), (6, 8),
-    (11, 12), (11, 23), (12, 24), (23, 24),
-    (11, 13), (13, 15), (15, 17), (15, 19), (15, 21),
-    (12, 14), (14, 16), (16, 18), (16, 20), (16, 22),
-    (23, 25), (25, 27), (27, 29), (27, 31),
-    (24, 26), (26, 28), (28, 30), (28, 32),
-    (17, 19), (19, 21), (18, 20), (20, 22), (29, 31), (30, 32)
+    (11, 12),
+    (11, 23),
+    (12, 24),
+    (23, 24),
+    (11, 13),
+    (13, 15),
+    (15, 17),
+    (15, 19),
+    (15, 21),
+    (12, 14),
+    (14, 16),
+    (16, 18),
+    (16, 20),
+    (16, 22),
+    (23, 25),
+    (25, 27),
+    (27, 29),
+    (27, 31),
+    (24, 26),
+    (26, 28),
+    (28, 30),
+    (28, 32),
+    (17, 19),
+    (19, 21),
+    (18, 20),
+    (20, 22),
+    (29, 31),
+    (30, 32),
 )
 
 FACE_LANDMARK_INDICES = range(0, 11)
@@ -66,7 +88,8 @@ def _face_center_x(pose_landmarks, img_width: int) -> Optional[float]:
     xs = [
         pose_landmarks[i].x
         for i in FACE_LANDMARK_INDICES
-        if i < len(pose_landmarks) and pose_landmarks[i].visibility > VISIBILITY_THRESHOLD
+        if i < len(pose_landmarks)
+        and pose_landmarks[i].visibility > VISIBILITY_THRESHOLD
     ]
     if not xs:
         return None
@@ -155,9 +178,9 @@ def mediapipe_pose_landmarker_detection(
             refined_pose_list.append(refined if refined is not None else pose_landmarks)
         pose_list = refined_pose_list
 
-        annotated_img = rgb_img.copy()
-        overlay = Image.new("RGBA", annotated_img.size, (0, 0, 0, 0))
-        draw = ImageDraw.Draw(overlay)
+        scale = 4
+        sw, sh = img_width * scale, img_height * scale
+        overlay_np = np.zeros((sh, sw, 4), dtype=np.uint8)
 
         for pose_landmarks in pose_list:
             n_landmarks = len(pose_landmarks)
@@ -173,43 +196,49 @@ def mediapipe_pose_landmarker_detection(
                     ):
                         continue
 
-                    x1, y1 = start.x * img_width, start.y * img_height
-                    x2, y2 = end.x * img_width, end.y * img_height
+                    p1 = (int(round(start.x * sw)), int(round(start.y * sh)))
+                    p2 = (int(round(end.x * sw)), int(round(end.y * sh)))
 
-                    draw.line(
-                        (x1, y1, x2, y2),
-                        fill=(255, 255, 255, 50),
-                        width=7,
-                        joint="curve",
+                    cv2.line(
+                        overlay_np, p1, p2, (255, 255, 255, 50), 7 * scale, cv2.LINE_AA
                     )
-                    draw.line(
-                        (x1, y1, x2, y2),
-                        fill=(255, 255, 255, 220),
-                        width=3,
-                        joint="curve",
+                    cv2.line(
+                        overlay_np, p1, p2, (255, 255, 255, 220), 3 * scale, cv2.LINE_AA
                     )
 
-            for landmark in pose_landmarks:
-                if landmark.visibility < VISIBILITY_THRESHOLD:
+            for idx, landmark in enumerate(pose_landmarks):
+                if (
+                    idx in FACE_LANDMARK_INDICES
+                    or landmark.visibility < VISIBILITY_THRESHOLD
+                ):
                     continue
 
-                x = landmark.x * img_width
-                y = landmark.y * img_height
+                center = (int(round(landmark.x * sw)), int(round(landmark.y * sh)))
 
-                r_outer = 5.0
-                draw.ellipse(
-                    (x - r_outer, y - r_outer, x + r_outer, y + r_outer),
-                    fill=(255, 255, 255, 60),
+                cv2.circle(
+                    overlay_np,
+                    center,
+                    int(5.0 * scale),
+                    (255, 255, 255, 60),
+                    -1,
+                    cv2.LINE_AA,
                 )
-                r_inner = 3.5
-                draw.ellipse(
-                    (x - r_inner, y - r_inner, x + r_inner, y + r_inner),
-                    outline=(255, 255, 255, 255),
-                    width=2,
+                cv2.circle(
+                    overlay_np,
+                    center,
+                    int(3.5 * scale),
+                    (255, 255, 255, 255),
+                    2 * scale,
+                    cv2.LINE_AA,
                 )
+
+        overlay_img = Image.fromarray(overlay_np, mode="RGBA")
+        overlay_img = overlay_img.resize(
+            (img_width, img_height), resample=Image.Resampling.LANCZOS
+        )
 
         annotated_img = Image.alpha_composite(
-            annotated_img.convert("RGBA"), overlay
+            rgb_img.convert("RGBA"), overlay_img
         ).convert("RGB")
 
         if save_pose_landmark_file:

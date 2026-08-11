@@ -21,20 +21,21 @@ options = FaceLandmarkerOptions(
     base_options=BaseOptions(model_asset_path=face_detection_model_path),
     running_mode=VisionRunningMode.IMAGE,
     num_faces=5,
-    min_face_detection_confidence=0.3,
+    min_face_detection_confidence=0.5,
 )
 landmarker = FaceLandmarker.create_from_options(options)
 
 CONNECTIONS = (
-    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_CONTOURS) +
-    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_FACE_OVAL) +
-    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_NOSE) +
-    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_RIGHT_EYE) +
-    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_LEFT_EYE) +
-    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_LIPS) +
-    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_RIGHT_EYEBROW) +
-    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_LEFT_EYEBROW)
+    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_CONTOURS)
+    + list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_FACE_OVAL)
+    + list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_NOSE)
+    + list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_RIGHT_EYE)
+    + list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_LEFT_EYE)
+    + list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_LIPS)
+    + list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_RIGHT_EYEBROW)
+    + list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_LEFT_EYEBROW)
 )
+
 
 def mediapipe_face_landmark_detection(
     img: Image.Image,
@@ -45,7 +46,7 @@ def mediapipe_face_landmark_detection(
         return False, 0, []
 
     try:
-        img_array = np.array(img.convert('RGB'))
+        img_array = np.array(img.convert("RGB"))
         h, w, _ = img_array.shape
         annotated_img = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
 
@@ -69,7 +70,14 @@ def mediapipe_face_landmark_detection(
                 key_indices = [1, 33, 61, 199, 263, 291, 362, 454, 234]
                 for idx in key_indices:
                     if idx < len(points):
-                        cv2.circle(annotated_img, points[idx], 3, (255, 255, 255), -1, cv2.LINE_AA)
+                        cv2.circle(
+                            annotated_img,
+                            points[idx],
+                            3,
+                            (255, 255, 255),
+                            -1,
+                            cv2.LINE_AA,
+                        )
 
         if "full" in fileId or "cropped" in fileId:
             final_img = Image.fromarray(cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB))
