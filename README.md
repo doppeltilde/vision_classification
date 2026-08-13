@@ -99,8 +99,8 @@ The **Classify Images** endpoint leverages state-of-the-art models from Hugging 
 The **MediaPipe Tasks** endpoint utilizes Google's MediaPipe framework to perform various computer vision tasks. It currently exposes the following features:
 - **Image Classification**
   Identifies what an image represents among a set of categories defined at training time.
-  > [!TIP]
-  > Doppeltilde provides a family of LiteRT sensitive content image classification models: [https://huggingface.co/collections/doppeltilde/jaeger-family](https://huggingface.co/collections/doppeltilde/jaeger-family).
+> [!TIP]
+> Doppeltilde provides a family of LiteRT sensitive content image classification models: [https://huggingface.co/collections/doppeltilde/jaeger-family](https://huggingface.co/collections/doppeltilde/jaeger-family).
 
 - **Face Detection**  
   Detects one or more human faces in an image. In addition to returning bounding boxes and detection confidence scores, this task supports:
