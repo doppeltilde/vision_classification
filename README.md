@@ -18,12 +18,6 @@
   </tr>
 </table>
 
-## Stack
-- [FastAPI](https://fastapi.tiangolo.com)
-- [MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/guide)
-- [Python](https://www.python.org)
-- [Docker](https://docker.com)
-
 ## Tasks
 Depending on the model you choose the following tasks are available:
 - Face detection
@@ -83,7 +77,7 @@ USE_API_KEY="False"
 API_KEY_HASH="<YOUR_GENERATED_KEY_HASH_HERE>"
 API_KEY_SALT="<YOUR_GENERATED_SALT_HERE>"
 
-DEFAULT_IMAGE_CLASSIFICATION_MODEL_URL=https://storage.googleapis.com/mediapipe-models/image_classifier/efficientnet_lite2/float32/latest/efficientnet_lite2.tflite
+DEFAULT_IMAGE_CLASSIFICATION_MODEL_URL=https://huggingface.co/doppeltilde/jaeger_small/resolve/main/jaeger_small_int8.tflite
 DEFAULT_FACE_DETECTION_MODEL_URL=https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_full_range/float16/latest/blaze_face_full_range.tflite
 DEFAULT_FACE_LANDMARK_MODEL_URL=https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task
 DEFAULT_GESTURE_RECOGNITION_MODEL_URL=https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task
@@ -98,13 +92,15 @@ DEFAULT_POSE_LANDMARKER_MODEL_URL=https://storage.googleapis.com/mediapipe-model
 
 The API is divided into distinct categories: Classify Images, MediaPipe Tasks, and Dedicated Sensitive Object Detection Task.
 
-#### Classify Images
+### Classify Images
 The **Classify Images** endpoint leverages state-of-the-art models from Hugging Face to perform image classification. It processes input images and returns classification results, including predicted labels and associated confidence scores, based on the selected pre-trained model.
 
-#### Mediapipe tasks
+### Mediapipe tasks
 The **MediaPipe Tasks** endpoint utilizes Google's MediaPipe framework to perform various computer vision tasks. It currently exposes the following features:
-- **Image Classification**  
+- **Image Classification**
   Identifies what an image represents among a set of categories defined at training time.
+  > [!TIP]
+  > Doppeltilde provides a family of LiteRT sensitive content image classification models: [https://huggingface.co/collections/doppeltilde/jaeger-family](https://huggingface.co/collections/doppeltilde/jaeger-family).
 
 - **Face Detection**  
   Detects one or more human faces in an image. In addition to returning bounding boxes and detection confidence scores, this task supports:
@@ -124,6 +120,12 @@ All tasks label images with specified categories, apply pixilation, face censori
 
 > [!NOTE]
 > Please be aware that the initial classification process may require some time, as the model is being downloaded.
+
+## Stack
+- [FastAPI](https://fastapi.tiangolo.com)
+- [MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/guide)
+- [Python](https://www.python.org)
+- [Docker](https://docker.com)
 
 ---
 _Notice:_ _This project was initally created to be used in-house, as such the

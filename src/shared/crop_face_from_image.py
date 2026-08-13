@@ -41,7 +41,9 @@ def crop_face_from_image(
         try:
             font = ImageFont.truetype("assets/Roboto-ExtraBold.ttf", 14)
         except OSError:
-            logger.warning("Failed to load font assets/Roboto-ExtraBold.ttf, using default.")
+            logger.warning(
+                "Failed to load font assets/Roboto-ExtraBold.ttf, using default."
+            )
             font = ImageFont.load_default()
 
         annotated_crop = clean_face_img.copy()
@@ -68,13 +70,18 @@ def save_annotated_faces(
         file_id = uuid.uuid4().hex
 
     annotated = img.convert("RGBA")
-    overlay = Image.new("RGBA", annotated.size, (0, 0, 0, 0))
+
+    scale = 2
+    overlay_size = (annotated.width * scale, annotated.height * scale)
+    overlay = Image.new("RGBA", overlay_size, (0, 0, 0, 0))
     draw_overlay = ImageDraw.Draw(overlay)
 
     try:
-        font = ImageFont.truetype("assets/Roboto-ExtraBold.ttf", 20)
+        font = ImageFont.truetype("assets/Roboto-ExtraBold.ttf", 20 * scale)
     except OSError:
-        logger.warning("Failed to load font assets/Roboto-ExtraBold.ttf, using default.")
+        logger.warning(
+            "Failed to load font assets/Roboto-ExtraBold.ttf, using default."
+        )
         font = ImageFont.load_default()
 
     for face in face_locations:
@@ -82,25 +89,32 @@ def save_annotated_faces(
         score = face["confidence"]
         score_text = f"Score: {score * 100:.0f}%"
 
-
-        bbox = [(coords["xmin"], coords["ymin"]), (coords["xmax"], coords["ymax"])]
+        bbox = [
+            (coords["xmin"] * scale, coords["ymin"] * scale),
+            (coords["xmax"] * scale, coords["ymax"] * scale),
+        ]
 
         draw_overlay.rounded_rectangle(
             bbox,
-            radius=15,
+            radius=15 * scale,
             fill=(255, 255, 255, 40),
             outline="white",
-            width=5,
+            width=5 * scale,
         )
 
-        text_y = max(5, coords["ymin"] - 35)
-        draw_overlay.text((coords["xmin"], text_y), score_text, font=font, fill="white")
+        text_y = max(5 * scale, (coords["ymin"] - 35) * scale)
+        draw_overlay.text(
+            (coords["xmin"] * scale, text_y), score_text, font=font, fill="white"
+        )
 
+    overlay = overlay.resize(annotated.size, Image.Resampling.LANCZOS)
     annotated = Image.alpha_composite(annotated, overlay).convert("RGB")
 
     out_path = os.path.join(OUTPUT_DIR, f"{file_id}_face.jpg")
     annotated.save(out_path, "JPEG", quality=95)
-    logger.info(f"Saved single annotated image with {len(face_locations)} face(s) → {out_path}")
+    logger.info(
+        f"Saved single annotated image with {len(face_locations)} face(s) → {out_path}"
+    )
 
     if save_landmark:
         full_landmark_img = img.copy()
@@ -117,37 +131,76 @@ def save_annotated_faces(
             bottom = min(img_height, pixel_coords["ymax"] + height_padding)
 
             cropped_face = img.crop((left, top, right, bottom))
-            success, _, landmarks = mediapipe_face_landmark_detection(cropped_face, file_id)
+            success, _, landmarks = mediapipe_face_landmark_detection(
+                cropped_face, file_id
+            )
 
             if success and landmarks:
-                crop_np = np.array(cropped_face.convert('RGB'))
+                crop_np = np.array(cropped_face.convert("RGB"))
                 h_c, w_c, _ = crop_np.shape
                 annotated_crop_cv = cv2.cvtColor(crop_np, cv2.COLOR_RGB2BGR)
 
                 CONNECTIONS = (
-                    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_CONTOURS) +
-                    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_FACE_OVAL) +
-                    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_NOSE) +
-                    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_RIGHT_EYE) +
-                    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_LEFT_EYE) +
-                    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_LIPS) +
-                    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_RIGHT_EYEBROW) +
-                    list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_LEFT_EYEBROW)
+                    list(
+                        mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_CONTOURS
+                    )
+                    + list(
+                        mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_FACE_OVAL
+                    )
+                    + list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_NOSE)
+                    + list(
+                        mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_RIGHT_EYE
+                    )
+                    + list(
+                        mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_LEFT_EYE
+                    )
+                    + list(mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_LIPS)
+                    + list(
+                        mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_RIGHT_EYEBROW
+                    )
+                    + list(
+                        mp.tasks.vision.FaceLandmarksConnections.FACE_LANDMARKS_LEFT_EYEBROW
+                    )
                 )
 
+                shift = 4
+                factor = 1 << shift
+
                 for face_landmarks in landmarks:
-                    points = [(int(lm.x * w_c), int(lm.y * h_c)) for lm in face_landmarks]
+                    sub_points = [
+                        (int(lm.x * w_c * factor), int(lm.y * h_c * factor))
+                        for lm in face_landmarks
+                    ]
+
                     for conn in CONNECTIONS:
-                        pt1 = points[conn.start]
-                        pt2 = points[conn.end]
-                        cv2.line(annotated_crop_cv, pt1, pt2, (255, 255, 255), 1, cv2.LINE_AA)
+                        pt1 = sub_points[conn.start]
+                        pt2 = sub_points[conn.end]
+                        cv2.line(
+                            annotated_crop_cv,
+                            pt1,
+                            pt2,
+                            (255, 255, 255),
+                            1,
+                            cv2.LINE_AA,
+                            shift=shift,
+                        )
 
                     key_indices = [1, 33, 61, 199, 263, 291, 362, 454, 234]
                     for idx in key_indices:
-                        if idx < len(points):
-                            cv2.circle(annotated_crop_cv, points[idx], 3, (255, 255, 255), -1, cv2.LINE_AA)
+                        if idx < len(sub_points):
+                            cv2.circle(
+                                annotated_crop_cv,
+                                sub_points[idx],
+                                3 * factor,
+                                (255, 255, 255),
+                                -1,
+                                cv2.LINE_AA,
+                                shift=shift,
+                            )
 
-                processed_crop_pil = Image.fromarray(cv2.cvtColor(annotated_crop_cv, cv2.COLOR_BGR2RGB))
+                processed_crop_pil = Image.fromarray(
+                    cv2.cvtColor(annotated_crop_cv, cv2.COLOR_BGR2RGB)
+                )
                 full_landmark_img.paste(processed_crop_pil, (left, top))
 
         landmark_path = os.path.join(OUTPUT_DIR, f"{file_id}_full_landmark.jpg")
