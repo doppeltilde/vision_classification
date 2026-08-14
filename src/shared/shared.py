@@ -44,6 +44,10 @@ class Settings(BaseSettings):
         default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task"
     )
 
+    default_holistic_landmark_model_url: str = Field(
+        default=f"{MEDIAPIPE_MODEL_STORAGE_URL}/holistic_landmarker/holistic_landmarker/float16/latest/holistic_landmarker.task"
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
@@ -85,6 +89,9 @@ models = {
     },
     "Hand Landmarker": {
         "url": settings.default_hand_landmark_model_url,
+    },
+    "Holistic Landmarker": {
+        "url": settings.default_holistic_landmark_model_url,
     },
 }
 

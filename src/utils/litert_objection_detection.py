@@ -16,11 +16,6 @@ MODEL_URL = ""
 CONF_THRESHOLD = 0.20
 NMS_THRESHOLD = 0.30
 
-
-def get_name(text: str) -> str:
-    return text.translate(CT)
-
-
 CLASS_NAMES = ["anus", "breast", "penis", "rear", "vagina"]
 
 COLORS = [

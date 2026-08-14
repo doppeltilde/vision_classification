@@ -2,19 +2,40 @@
 
 <table>
   <tr>
-    <td><img src="assets/example.jpg" width="500" alt="Image 1"></td>
-    <td><img src="assets/example_full_landmark.jpg" width="500" alt="Image 2"></td>
-    <td><img src="assets/example_pose_landmark.jpg" width="500" alt="Image 3"></td>
-  </tr>
-   <tr>
-    <td><img src="assets/flamingo.png" width="500" alt="Image 4"></td>
-    <td><img src="assets/example_object.jpg" width="500" alt="Image 5"></td>
-    <td><img src="assets/example_hand.jpg" width="500" alt="Image 6"></td>
+    <td align="center"><b>Face Detection</b></td>
+    <td align="center"><b>Face Landmark</b></td>
+    <td align="center"><b>Pose Landmark</b></td>
   </tr>
   <tr>
-    <td><img src="assets/1.jpg" width="500" alt="Image 7"></td>
-    <td><img src="assets/2.jpg" width="500" alt="Image 8"></td>
-    <td><img src="assets/3.jpg" width="500" alt="Image 9"></td>
+    <td><img src="assets/example.jpg" width="500" alt="Original"></td>
+    <td><img src="assets/example_full_landmark.jpg" width="500" alt="Face Landmark"></td>
+    <td><img src="assets/example_pose_landmark.jpg" width="500" alt="Pose Landmark"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Image Classification</b></td>
+    <td align="center"><b>Object Detection</b></td>
+    <td align="center"><b>Hand Landmark</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/image_classification_example.png" width="500" alt="Image Classification"></td>
+    <td><img src="assets/example_object.jpg" width="500" alt="Object Detection"></td>
+    <td><img src="assets/example_hand.jpg" width="500" alt="Hand Landmark"></td>
+  </tr>
+    <tr>
+    <td align="center"><b>Holistic Landmarks</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/example_holistic.jpg" width="500" alt="Holistic Landmarks"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Sensitive Content Detection 1</b></td>
+    <td align="center"><b>Sensitive Content Detection 2</b></td>
+    <td align="center"><b>Sensitive Content Detection 3</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/1.jpg" width="500" alt="Sample 1"></td>
+    <td><img src="assets/2.jpg" width="500" alt="Sample 2"></td>
+    <td><img src="assets/3.jpg" width="500" alt="Sample 3"></td>
   </tr>
 </table>
 
@@ -83,6 +104,7 @@ DEFAULT_FACE_LANDMARK_MODEL_URL=https://storage.googleapis.com/mediapipe-models/
 DEFAULT_GESTURE_RECOGNITION_MODEL_URL=https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task
 DEFAULT_OBJECT_DETECTION_MODEL_URL=https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/latest/efficientdet_lite0.tflite
 DEFAULT_POSE_LANDMARKER_MODEL_URL=https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task
+DEFAULT_HOLISTIC_LANDMARK_MODEL_URL=https://storage.googleapis.com/mediapipe-models/holistic_landmarker/holistic_landmarker/float16/latest/holistic_landmarker.task
 ```
 
 ## Usage
@@ -112,6 +134,7 @@ The **MediaPipe Tasks** endpoint utilizes Google's MediaPipe framework to perfor
 
 - **Object Detection**
 - **Hand Landmark Detection**
+- **Holistic Landmark Detection**
 
 #### Dedicated Sensitive Object Detection Task
 All tasks label images with specified categories, apply pixilation, face censoring, and optionally return URLs.

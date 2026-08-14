@@ -18,6 +18,11 @@ from src.utils.mediapipe_hand_landmark import (
     save_annotated_hands,
 )
 
+from src.utils.mediapipe_holistic_landmark import (
+    mediapipe_holistic_landmark_detection,
+    save_annotated_holistic,
+)
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Mediapipe Tasks"])
@@ -197,6 +202,49 @@ async def classify(
     return {
         "objects_detected": objects_detected,
         "hand_counts": hand_counts,
+        "objects_locations": objects_locations,
+    }
+
+
+@router.post("/api/mediapipe/holistic_landmarks", dependencies=[Depends(get_api_key)])
+async def classify(
+    file: UploadFile = File(...),
+) -> Dict[str, Any]:
+    contents = await file.read()
+
+    file_id = os.path.splitext(file.filename)[0] if file.filename else "uploaded_file"
+
+    try:
+        mime_type = puremagic.from_string(contents, mime=True)
+        is_image = mime_type.startswith("image/")
+    except puremagic.PureError:
+        is_image = False
+
+    if not is_image:
+        raise HTTPException(
+            status_code=400, detail="File is not a supported image type"
+        )
+
+    try:
+        image_stream = io.BytesIO(contents)
+        img = Image.open(image_stream)
+    except UnidentifiedImageError:
+        raise HTTPException(status_code=400, detail="Invalid or corrupted image file")
+
+    objects_detected, holistic_counts, objects_locations, img = (
+        mediapipe_holistic_landmark_detection(img)
+    )
+
+    if objects_detected and holistic_counts > 0:
+        save_annotated_holistic(
+            img,
+            objects_locations,
+            file_id=file_id,
+        )
+
+    return {
+        "objects_detected": objects_detected,
+        "holistic_counts": holistic_counts,
         "objects_locations": objects_locations,
     }
 
