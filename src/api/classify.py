@@ -2,13 +2,12 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from PIL import Image, UnidentifiedImageError
 import io, puremagic
 from typing import Dict, Any, Optional
-import logging
+import logging, os, uuid
 
 from src.middleware.auth import get_api_key
 from src.services.classify_single_image_service import process_single_image
 from src.services.classify_gif_service import process_animated_gif
-from src.shared.shared import load_model
-
+from src.shared.shared import load_model, OUTPUT_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +23,7 @@ async def classify(
     max_workers: Optional[int] = None,
     label: Optional[str] = None,
     detect_faces: bool = False,
+    save_original: bool = False,
     save_cropped: bool = False,
     save_landmark: bool = False,
     return_face_locations: bool = False,
@@ -37,6 +37,7 @@ async def classify(
         score_threshold: Threshold for early stopping on positive detection
         max_workers: Maximum number of worker threads for GIF processing
         detect_faces: Whether to perform face detection before classification (default: False)
+        save_original: Whether to save the raw uploaded original image (default: False)
         save_cropped: Whether to save cropped faces (default: False)
         save_landmark: Whether to save face landmarks (default: False)
         return_face_locations: Whether to return face locations (default: False)
@@ -69,6 +70,20 @@ async def classify(
             raise HTTPException(
                 status_code=400, detail="File is not a supported image type"
             )
+
+        if save_original:
+            file_id = uuid.uuid4().hex
+
+            os.makedirs(OUTPUT_DIR, exist_ok=True)
+            # Preserve original extension or default safely based on detected mime_type
+            ext = mime_type.split("/")[-1] if "/" in mime_type else "jpg"
+            if ext == "jpeg":
+                ext = "jpg"
+
+            original_path = os.path.join(OUTPUT_DIR, f"{file_id}_original.{ext}")
+            with open(original_path, "wb") as f:
+                f.write(contents)
+            logger.info(f"Saved original uploaded image to: {original_path}")
 
         # Open image
         try:
