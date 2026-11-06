@@ -3,7 +3,7 @@ Pillow==13.0.0
 puremagic==2.2.0
 optimum-onnx[onnxruntime]==0.1.0
 pydantic-settings==2.16.2
-mediapipe==1.2.0
-ultralytics==8.4.197
-supervision==0.31.3
+mediapipe==1.2.2
+ultralytics==8.4.203
+supervision==0.31.5
 ai-edge-litert==2.3.0
